@@ -335,7 +335,7 @@ class App(tk.Frame):
             self.Flux_Output.config(text='')
             self.labEntryX.config(text='x-Komponente')
             self.labEntryY.config(text='y-Komponente')
-            self.labInt.config(text='Auwahl des Integraltheorems:')
+            self.labInt.config(text='Auswahl des Integraltheorems:')
             self.slider.config(label='Anzahl der Vektoren')
             self.checkbox_partialy.config(text='y-Komponente im Rechteck')
             self.checkbox_partialx.config(text='x-Komponente im Rechteck')
