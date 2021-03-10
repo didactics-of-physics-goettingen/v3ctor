@@ -151,7 +151,7 @@ class App(tk.Frame):
 
         #Sub-Body Left
 
-        self.labInt = tk.Label(self.body_left, text='Auswahl des Integraltheorems: ',font=(font,12),fg=fg,bg=bg)
+        self.labInt = tk.Label(self.body_left, text='Auswahl des Integraltheorems: ',font=(font,16),fg=fg,bg=bg)
         self.labInt.grid(row=0,column=0,sticky=tk.W, padx=10,pady=25)
 
         self.OptionList= ["Satz von Gauss","Satz von Stokes"]
@@ -446,9 +446,9 @@ class App(tk.Frame):
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Impressum','Die Simulation wurde an der Fakultät für Physik in Göttingen in der Didaktik der Physik für Lehrzwecke entwickelt. Kontakt: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . The code was written in Python using the Sympy-package.')
+            messagebox.showinfo('Impressum','Die Simulation wurde an der Fakultät für Physik in Göttingen in der Didaktik der Physik für Lehrzwecke entwickelt. Kontakt: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . Der Code ist in Python mit dem MOdul Sympy geschrieben. Version: März 2021')
         else:
-            messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at University of Göttingen (Physics Education Research) for teaching purposes. Contact: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . The code was written in Python using the Sympy-package.')
+            messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at University of Göttingen (Physics Education Research) for teaching purposes. Contact: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . The code was written in Python using the Sympy-package. Version: March 2021')
     def help_field(self):
         if self.checklanguage == 'DE':
             messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Durch Bewegen des Sliders kann die Anzahl der Vektoren pro Zeile/Spalte variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
