@@ -2,6 +2,86 @@
 Programm zum Darstellen von 2D-Vektorfelden und zur Visualisierung der Divergenz und Rotation des Feldes
 über die jeweiligen Integrale nach Gauss und Stokes. 
 Benötigt das Packet sympy und python Version 3.
+09.03.2021:
+    -Field scanner ausbauen
+    - Fehler der Felderzeugung und der Koordinatenachsen behoebn
+
+08.03.2021:
+    - Modus Field scanner einbinden
+
+04.03.2021:
+    - marginale überarbeitung des layouts
+    -scale überarbeiten
+
+02.03.2021:
+    -totale Überarbeitungen der GUI
+    -einbinden von Hilfe Buttons
+
+15.02.2021:
+    -Exe Datei erstellt
+    -Icon erstellt
+    _label für werte angepasst
+    -angefangen an Version 2.0 zu arbeiten -> überarbeitetes Layout
+
+11.02.2021:
+    -Berechnen der Div/Rot an einer Stelle mit rechter Maustaste
+
+10.02.2021:
+    -Bugfixes
+    -englische Version
+
+05.02.2021:
+    -weitere Arbeit an Bug fixes
+    -Sortieren der GUI
+    -Einführen eines Toggels für Normalenvektoren des Rechtecks
+
+02.02.2021 und 05.02.2021:
+    -Bug fix der Divergenz/Integral VZ -> Hilfsfkt Transform
+
+01.02.2021:
+    - default feld  (x,0)
+    - überarbeite des Verzereren des rechtecks
+    - Rechtsklick: divergenz bzw Rotation des Feldes an der Stelle
+    -herraus und reinzomm interaktiv
+    -Label der Achsen anbringen
+
+25.01.2021:
+    -entfernen von einigen Terminalausgaben
+    -Farbe reduzieren der äußeren Vektoren
+    -erzeugen der Checkboxen für partielle Ableitungen
+
+21.01.2021
+    - Pfeile im Rechteck bleiben während des veränderen des Rechtecks erhalten
+    - x,y antiele der Vektoren innerhalb des Rechtecks anzeigen.
+
+15.01.2021
+    - Verändern des Cursors beim überfahren der Rechtecklinie und im Rechteck
+    - arbitrary unit für den Wert der Integrale eingefügt
+    - Vektorskalierung überarbeitet für konstante Felder
+        -> entfernen der Funktion "calc_coordinate", da dies direkt in den Schleifen gelöst wird
+
+11.01.2021
+    - größe ändern des rechtecks durch ziehen der Kanten mit der Maus
+       -> Beim Beenden des Rechtecks werden nun immer die Koordinaten sortiert  -- Notiz: Kann nun vielleicht auhc in den anderen Funktionen die darauf aufbauen entfernt werden. -> noch zu testen. 
+       -> hinzufügen der Koordinaten für das zuvor gezeichnete Rechteck
+    -entfernung der activecolor
+
+
+6.01.2021:
+    -vorbereitung für Änderung der Größe des Rechtecks durch aufziehen der Kanten
+
+30.12.2020:
+    - Grafische Anpassung an MacOS
+       -> Entfernung vom Stipple und Farben des Textes einstellen
+
+
+29.12.2020: 
+    -Layout des Programms durch grid Funktionalität
+    -Skalieren der Koordinaten bei Veränderung der Anzahl der Vektoren
+    -Skalieren des Wertes des Integrals
+    -Erkennung wenn auf eine der Seiten des Rechtecks geklickt wurde
+
+
 '''
 
 import tkinter as tk  #Modul für GUI
@@ -56,7 +136,7 @@ class App(tk.Frame):
 
         #HeaderContent
 
-        self.Header_Label_left=tk.Label(self.header_left,text='vere vedi vecu \n Eine forschungsbasierte Simulation zu Vektorfeldern, \n Divergenz und Curl.', font=('Didot',16),bg=bg)
+        self.Header_Label_left=tk.Label(self.header_left,text='vere vedi vecu \n Eine forschungsbasierte Simulation zu Vektorfeldern, \n Divergenz und Curl.', font=(font,16),bg=bg,fg=fg)
         self.Header_Label_left.grid(row=0,column=0,columnspan=2,padx=60)
 
         
@@ -71,14 +151,14 @@ class App(tk.Frame):
 
         #Sub-Body Left
 
-        self.labInt = tk.Label(self.body_left, text='Auswahl des Integraltheorems: ',font=('Didot',12),fg='black',bg=bg)
+        self.labInt = tk.Label(self.body_left, text='Auswahl des Integraltheorems: ',font=(font,12),fg=fg,bg=bg)
         self.labInt.grid(row=0,column=0,sticky=tk.W, padx=10,pady=25)
 
         self.OptionList= ["Satz von Gauss","Satz von Stokes"]
         self.integral_kind = tk.StringVar(self)
         self.integral_kind.set(self.OptionList[0])
         self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
-        self.Menu.config(width=15, font=('Didot',12),fg='black',bg=bg)
+        self.Menu.config(width=15, font=(font,12),fg=fg,bg=bg)
         self.Menu.grid(row=0,column=0, padx=(180))
         self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
 
@@ -89,84 +169,84 @@ class App(tk.Frame):
         self.Display_Image.grid(row=2, column=0,columnspan=2,pady=20)
 
 
-        self.Info_Button_Field=tk.Button(self.body_left,text='i',font=('Times',12),bg=bg, border=0, command=self.help_field)
+        self.Info_Button_Field=tk.Button(self.body_left,text='i',font=('Times',12),bg=bg,fg=fg, border=0, command=self.help_field)
         self.Info_Button_Field.grid(row=3,column=0,sticky=tk.W+tk.N,pady=10)
 
-        self.Field_Label=tk.Label(self.body_left,text='Definiere das Vektorfeld:', font=('Didot',16),bg=bg)
+        self.Field_Label=tk.Label(self.body_left,text='Definiere das Vektorfeld:', font=(font,16),bg=bg,fg=fg)
         self.Field_Label.grid(row=3,column=0,sticky=tk.N+tk.W,pady=10,padx=50)
 
         #### Field Frame
         self.Field_Frame=tk.Frame(self.body_left,bg=bg)
         self.Field_Frame.grid(row=3,column=0,padx=(260,0))
 
-        self.labEntryX= tk.Label(self.Field_Frame, text=f'x-Komponente:',font=('Didot',12),fg='black',bg=bg)
+        self.labEntryX= tk.Label(self.Field_Frame, text=f'x-Komponente:',font=(font,12),fg=fg,bg=bg)
         self.labEntryX.grid(row=0,column=0, sticky=tk.W)
 
-        self.labEntryY= tk.Label(self.Field_Frame, text=f'y-Komponente:',font=('Didot',12),fg='black',bg=bg)
+        self.labEntryY= tk.Label(self.Field_Frame, text=f'y-Komponente:',font=(font,12),fg=fg,bg=bg)
         self.labEntryY.grid(row=1,column=0,sticky=tk.W,)
 
         #Eingabe für das Vektorfeld in x-Richtung
-        self.input1 = tk.Entry(self.Field_Frame,textvariable=tk.StringVar(self, value='x'),font=10, width=10,fg='black',bg=bg)
+        self.input1 = tk.Entry(self.Field_Frame,textvariable=tk.StringVar(self, value='x'),font=(font,12), width=10,fg=fg,bg=bg)
         self.input1.grid(row=0,column=1)
         #Eingabe fr das Vektorfeld in y-Richtung   
-        self.input2 = tk.Entry(self.Field_Frame,textvariable=tk.StringVar(self, value='0'),font=10, width=10,fg='black',bg= bg)       
+        self.input2 = tk.Entry(self.Field_Frame,textvariable=tk.StringVar(self, value='0'),font=(font,12), width=10,fg=fg,bg= bg)       
         self.input2.grid(row=1,column=1)
 
         #Button zum erzeugen des Vektorfeldes
-        self.but1 = tk.Button(self.Field_Frame, text='Berechne!', command=self.new_field,font=('Didot',12),fg='black',bg=bg)
+        self.but1 = tk.Button(self.Field_Frame, text='Berechne!', command=self.new_field,font=(font,12),fg=fg,bg=bg)
         self.but1['bg']='#FFFFFF'
         self.but1.grid(row=2,column=0,columnspan=2,sticky=tk.W)
 
         #Slider zum einstellen der Anzahl an Vektoren
-        self.slider = tk.Scale(self.Field_Frame,from_=5, to=25, orient=tk.HORIZONTAL, length=250, label='Anzahl der Vektoren',font=('Didot',12),fg='black',bg=bg, command=self.zoom) #Slider für Anzahl der Vektoren in einer Spalte/Zeile
+        self.slider = tk.Scale(self.Field_Frame,from_=5, to=25, orient=tk.HORIZONTAL, length=250, label='Anzahl der Vektoren',font=(font,12),fg=fg,bg=bg, command=self.zoom) #Slider für Anzahl der Vektoren in einer Spalte/Zeile
         self.slider.set(10)
         self.slider.grid(row=3,column=0,columnspan=2,sticky=tk.W)
 
         #Schalter zum Einbelden des Koordinatensystems
         self.check_var = tk.BooleanVar()
         self.check_var.set(False)
-        self.checkbox = tk.Checkbutton(self.Field_Frame, text='Koordinatensystem einblenden', variable=self.check_var ,command=self.toggleCoordinatelines,font=('Didot',12),fg='black',bg=bg) 
+        self.checkbox = tk.Checkbutton(self.Field_Frame, text='Koordinatensystem einblenden', variable=self.check_var ,command=self.toggleCoordinatelines,font=(font,12),fg=fg,bg=bg) 
         self.checkbox.grid(row=4,column=0,columnspan=2,sticky=tk.W)
 
         ### Divergenze Frame
-        self.Divergenz_Info_Button=tk.Button(self.body_left,text='i',font=('Times',12),bg=bg, border=0, command=self.help_divergenz)
+        self.Divergenz_Info_Button=tk.Button(self.body_left,text='i',font=('Times',12),bg=bg,fg=fg, border=0, command=self.help_divergenz)
         self.Divergenz_Info_Button.grid(row=4,column=0,sticky=tk.W+tk.N,pady=50)
 
         self.Divergenz_Frame=tk.Frame(self.body_left,bd=20,bg=bg)
         self.Divergenz_Frame.grid(row=4,column=0,sticky=tk.W+tk.N,padx=(30,0),pady=30)
 
-        self.Divergenz_Label=tk.Label(self.Divergenz_Frame,text='Divergenz von F',font=('Didot',16),bg=bg)
+        self.Divergenz_Label=tk.Label(self.Divergenz_Frame,text='Divergenz von F',font=(font,16),bg=bg,fg=fg)
         self.Divergenz_Label.grid(row=0,sticky=tk.W)
         
         #Fieldscanner
         self.check_fieldscanner_var = tk.BooleanVar()
         self.check_fieldscanner_var.set(False)
-        self.fieldscannercheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Feld abtasten', variable=self.check_fieldscanner_var,command=self.switch_fieldscanner,font=('Didot',12),fg='black',bg=bg)
+        self.fieldscannercheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Feld abtasten', variable=self.check_fieldscanner_var,command=self.switch_fieldscanner,font=(font,12),fg=fg,bg=bg)
         self.fieldscannercheckbox.grid(row=1,sticky=tk.W)
         
         #Abstandsinput fieldscanner
-        self.Input_label_fieldscanner=tk.Label(self.Divergenz_Frame,text='Schrittweite des Fieldsanners: ',bg=bg, font=('Didot',12))
+        self.Input_label_fieldscanner=tk.Label(self.Divergenz_Frame,text='Schrittweite des Fieldsanners: ',bg=bg, font=(font,12),fg=fg)
         self.Input_label_fieldscanner.grid(row=2,column=0,sticky=tk.W)
         
-        self.Input_fieldscanner=tk.Entry(self.Divergenz_Frame,textvariable=tk.IntVar(self, value=15),width=2,bg=bg,font=('Didot',12))
-        self.Input_fieldscanner.grid(row=2,column=0,padx=(190,0),sticky=tk.W)
+        self.Input_fieldscanner=tk.Entry(self.Divergenz_Frame,textvariable=tk.IntVar(self, value=15),width=2,bg=bg,font=(font,12),fg=fg)
+        self.Input_fieldscanner.grid(row=2,column=0,padx=(160,0),sticky=tk.W)
 
         #Schalter zum Einbelden der Partiellen Richtungen in X im Rechteck
         self.check_var_partialx = tk.BooleanVar()
         self.check_var_partialx.set(False)
-        self.checkbox_partialx = tk.Checkbutton(self.Divergenz_Frame, text='x-Komponente im Rechteck', variable=self.check_var_partialx , command=self.catch_inRect_vec, font=('Didot',12),fg='black',bg=bg) 
+        self.checkbox_partialx = tk.Checkbutton(self.Divergenz_Frame, text='x-Komponente im Rechteck', variable=self.check_var_partialx , command=self.catch_inRect_vec, font=(font,12),fg=fg,bg=bg) 
         self.checkbox_partialx.grid(row=3,sticky=tk.W)
 
         #Schalter zum Einbelden der Partiellen Richtungen in Y im Rechteck
         self.check_var_partialy = tk.BooleanVar()
         self.check_var_partialy.set(False)
-        self.checkbox_partialy = tk.Checkbutton(self.Divergenz_Frame, text='y-Komponente im Rechteck', variable=self.check_var_partialy , command=self.catch_inRect_vec, font=('Didot',12),fg='black',bg=bg) 
+        self.checkbox_partialy = tk.Checkbutton(self.Divergenz_Frame, text='y-Komponente im Rechteck', variable=self.check_var_partialy , command=self.catch_inRect_vec, font=(font,12),fg=fg,bg=bg) 
         self.checkbox_partialy.grid(row=4,sticky=tk.W)
 
         self.Divergenz_output_Frame=tk.Frame(self.Divergenz_Frame,bg='darkblue',border=2)
         self.Divergenz_output_Frame.grid(row=5,sticky=tk.W,pady=(5,0))
 
-        self.Divergenz_Output=tk.Label(self.Divergenz_output_Frame,text=' ',font=('Didot',16),bg=bg,width=12)
+        self.Divergenz_Output=tk.Label(self.Divergenz_output_Frame,text=' ',font=(font,16),bg=bg,fg=fg,width=12)
         self.Divergenz_Output.grid(sticky=tk.W)
 
 
@@ -174,33 +254,33 @@ class App(tk.Frame):
         self.Flux_Frame=tk.Frame(self.body_left,bd=20,bg=bg)
         self.Flux_Frame.grid(row=4,column=0,sticky=tk.W+tk.N,padx=(310,0),pady=(30,0))
 
-        self.Flux_Label=tk.Label(self.Flux_Frame,text='Fluss durch Fläche',font=('Didot',16),bg=bg)
+        self.Flux_Label=tk.Label(self.Flux_Frame,text='Fluss durch Fläche',font=(font,16),fg=fg,bg=bg)
         self.Flux_Label.grid(row=0,sticky=tk.W)
 
         #Toggle für Normal/Lininevektoren des Rechtecks
         self.check_var_RectVec = tk.BooleanVar()
         self.check_var_RectVec.set(False)
-        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Normalenvektoren einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=('Didot',12),fg='black',bg=bg) 
+        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Normalenvektoren einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=(font,12),fg=fg,bg=bg) 
         self.checkbox_RectVec.grid(row=1,sticky=tk.W,)
 
         self.Flux_output_Frame=tk.Frame(self.Flux_Frame,bg='darkblue',border=2)
-        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(87,0))
+        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(90,0))
 
-        self.Flux_Output=tk.Label(self.Flux_output_Frame,text='',font=('Didot',16),bg=bg,width=12)
+        self.Flux_Output=tk.Label(self.Flux_output_Frame,text='',font=(font,16),fg=fg,bg=bg,width=12)
         self.Flux_Output.grid()
 
         #Footer
         
-        self.Header_Button_Info=tk.Button(self,text='i',font=('Times',12),bg=bg, command=self.Impressum)
+        self.Header_Button_Info=tk.Button(self,text='i',font=('Times',12),bg=bg,fg=fg, command=self.Impressum)
         self.Header_Button_Info.grid(row=2,column=1,sticky=tk.E,padx=(0,340))
 
         #Button zum Ändern der Sprache
-        self.but_change_lang=tk.Button(self, text='Change language to English', command=self.changelanguage, fg='black',bg=bg, font=('Didot',12))
+        self.but_change_lang=tk.Button(self, text='Change language to English', command=self.changelanguage, fg=fg,bg=bg, font=(font,12))
         self.but_change_lang.grid(row=2,column=1,sticky=tk.E,padx=(0,100))
         self.checklanguage='DE'
 
         #Button zum beenden
-        self.but_end = tk.Button(self, text='Beenden',font=('Didot',12), command=ende,fg='black',bg=bg) 
+        self.but_end = tk.Button(self, text='Beenden',font=(font,12), command=ende,fg=fg,bg=bg) 
         self.but_end.grid(row=2,column=1, sticky=tk.E+tk.N, padx=(0,5))
 
 
@@ -301,8 +381,8 @@ class App(tk.Frame):
             self.labEntryY.config(text='y-component')
             self.labInt.config(text='Select integral theorem:')
             self.slider.config(label='Number of vectors')
-            self.checkbox_partialy.config(text='Highlight x components')
-            self.checkbox_partialx.config(text='Highlight y components')
+            self.checkbox_partialy.config(text='Highlight y components')
+            self.checkbox_partialx.config(text='Highlight x components')
             self.checkbox.config(text='Show coordinate axes ')
             self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
             self.but1.config(text='Show field!')
@@ -312,7 +392,7 @@ class App(tk.Frame):
             self.OptionList = ["Gauss' theorem","Stokes' theorem"]
             self.integral_kind.set(self.OptionList[0])
             self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
-            self.Menu.config(width=15, font=('Didot',12),fg='black', bg=bg)
+            self.Menu.config(width=15, font=(font,12),fg=fg, bg=bg)
             self.Menu.grid(row=0,column=0, padx=180)
             self.Menu['menu'].entryconfigure("Stokes' theorem",state='disabled')
 
@@ -348,7 +428,7 @@ class App(tk.Frame):
             self.OptionList = ['Satz von Gauss','Satz von Stokes']
             self.integral_kind.set(self.OptionList[0])
             self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
-            self.Menu.config(width=15, font=('Didot',12),fg='black',bg=bg)
+            self.Menu.config(width=15, font=(font,12),fg=fg,bg=bg)
             self.Menu.grid(row=0,column=0, padx=180)
             self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
 
@@ -376,9 +456,9 @@ class App(tk.Frame):
             messagebox.showinfo('Field F','Define the field components by entering x, y, scalars, and mathematical operators (+, -, *, /). Root operations, tangensfunctions, exponentialfunctions and absolute operations are not possible. Move the slider to change the number of vectors that are displayed in each row or column. Show or hide the axes of the coordinate system to identify the origin (0,0) and the orientation of the axes.')
     def help_divergenz(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Divergenz von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Normalen-Projektion der Vektoren auf dem Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Divergenz an.')
+            messagebox.showinfo('Divergenz von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Normalen-Projektion der Vektoren auf dem Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Divergenz an. Mit dem Fieldscanner können Vektorpfade nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade.')
         else:
-            messagebox.showinfo('Divergence of F','Draw rectangles as test areas using the mouse. Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outer normal vector. Use the right mouse button to show the value of divergence at any spot.')
+            messagebox.showinfo('Divergence of F','Draw rectangles as test areas using the mouse. Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outer normal vector. Use the right mouse button to show the value of divergence at any spot. With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
 
 
 ## -------- OnClick Events
@@ -967,6 +1047,8 @@ class App(tk.Frame):
 
 
 bg = 'white'
+font = 'Times'
+fg = 'black'
 width=1400
 height=800
 
