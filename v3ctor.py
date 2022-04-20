@@ -388,12 +388,15 @@ class App(tk.Frame):
             self.canvas.itemconfig('field_arrow', fill='gray')
         else:
             self.canvas.itemconfig('field_arrow', fill='black')
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
 
     def switch_paddlewheel(self):
 
         if self.check_paddlewheel_var.get():
+            self.canvas.itemconfig('field_arrow', fill='gray')
             self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
         else:
+            self.canvas.itemconfig('field_arrow', fill='black')
             self.animate_list = []
 ## -------- Info Buttons
     def Impressum(self):
@@ -906,9 +909,9 @@ class App(tk.Frame):
         
         for v in vector_list:
             x0, y0 = (self.canvas.coords(v)[0], self.canvas.coords(v)[1])
-            if self.check_fieldscanner_var == True:
+            if self.check_fieldscanner_var.get() == True:
                 self.draw_vector_components(x0,y0,tagx='fieldscanner_partial_x',tagy='fieldscanner_partial_y')
-            else:
+            elif self.canvas.gettags(v) == ('field_arrow',):
                 self.draw_vector_components(x0,y0,tagx='partial_x_arrow',tagy='partial_y_arrow')
 
     def draw_vector_components(self,x0,y0,tagx,tagy):        
@@ -1007,21 +1010,18 @@ class App(tk.Frame):
 
     def field_scanner_wheel(self,x,y):
         curl = self.Field.curl_at(self.Transform(x,y)[0],self.Transform(x,y)[1])
-        if  curl > 0:
-            f = 'paddlewheel.png'
-            img = Image.open(f)
-            wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
-            self.animate_list.append(wheel)
-        elif curl < 0:
-            f = 'paddlewheel.png'
-            img = Image .open(f)
-            wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
-            self.animate_list.append(wheel)
-        else:
-            f = 'paddlewheel.png'
-            img = Image .open(f)
-            wheel = Paddlewheel(self.canvas,x,y,img,0,0)
-            self.animate_list.append(wheel)
+        f = 'paddlewheel.png'
+        img = Image.open(f)
+        wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
+        self.animate_list.append(wheel)
+        self.rectid = 0
+        self.rectx0 = x-100
+        self.rectx1 = x+100
+        self.recty0 = y+100
+        self.recty1 = y-100
+        self.catch_inRect_vec()
+
+       
 
     def animate(self):
         for a in self.animate_list: 
