@@ -1,2 +1,4 @@
 sympy
 scipy
+Pillow
+tk
