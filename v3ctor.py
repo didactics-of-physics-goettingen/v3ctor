@@ -105,6 +105,8 @@ class App(tk.Frame):
         self.Menu.grid(row=0,column=0, padx=(180))
         #self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
 
+        self.Info_Button_Integral = tk.Button(self.body_left,text='i',font=('Times',12),bg=bg,fg=fg, border=0, command=self.help_integral)
+        self.Info_Button_Integral.grid(row=1, column=0)
 
         if self.integral_kind.get() == "Satz von Gauß":
             self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
@@ -160,6 +162,13 @@ class App(tk.Frame):
         self.Divergenz_Frame=tk.Frame(self.body_left,bd=20,bg=bg)
         self.Divergenz_Frame.grid(row=4,column=0,sticky=tk.W+tk.N,padx=(30,0),pady=30)
 
+        #Paddle Wheel
+        self.check_paddlewheel_var = tk.BooleanVar()
+        self.check_paddlewheel_var.set(False)
+        self.paddlewheelcheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Paddlewheel', variable=self.check_paddlewheel_var,command=self.switch_paddlewheel,font=(font,12),fg=fg,bg=bg)
+        self.paddlewheelcheckbox.grid(row=0,sticky=tk.W)
+        
+        #Divergenz Label
         self.Divergenz_Label=tk.Label(self.Divergenz_Frame,text='Divergenz von F',font=(font,16),bg=bg,fg=fg)
         self.Divergenz_Label.grid(row=0,sticky=tk.W)
         
@@ -169,11 +178,6 @@ class App(tk.Frame):
         self.fieldscannercheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Feld abtasten', variable=self.check_fieldscanner_var,command=self.switch_fieldscanner,font=(font,12),fg=fg,bg=bg)
         self.fieldscannercheckbox.grid(row=1,sticky=tk.W)
         
-        #Paddle Wheel
-        self.check_paddlewheel_var = tk.BooleanVar()
-        self.check_paddlewheel_var.set(False)
-        self.paddlewheelcheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Paddlewheel', variable=self.check_paddlewheel_var,font=(font,12),fg=fg,bg=bg)
-        self.paddlewheelcheckbox.grid(row=2,sticky=tk.W)
 
         #Abstandsinput fieldscanner
         self.Input_label_fieldscanner=tk.Label(self.Divergenz_Frame,text='Schrittweite des Fieldsanners: ',bg=bg, font=(font,12),fg=fg)
@@ -211,11 +215,11 @@ class App(tk.Frame):
         #Toggle für Normal/Lininevektoren des Rechtecks
         self.check_var_RectVec = tk.BooleanVar()
         self.check_var_RectVec.set(False)
-        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Normalenvektoren einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=(font,12),fg=fg,bg=bg) 
+        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Projektion auf die Kurvennormale der Fläche einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=(font,12),fg=fg,bg=bg) 
         self.checkbox_RectVec.grid(row=1,sticky=tk.W,)
 
         self.Flux_output_Frame=tk.Frame(self.Flux_Frame,bg='darkblue',border=2)
-        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(117,0))
+        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(10,0))
 
         self.Flux_Output=tk.Label(self.Flux_output_Frame,text='',font=(font,16),fg=fg,bg=bg,width=12)
         self.Flux_Output.grid()
@@ -259,21 +263,21 @@ class App(tk.Frame):
             self.canvas.create_line(int(self.canvas_size/2),0,int(self.canvas_size/2),self.canvas_size, fill='gray' , tags=('Coordinateline',))
             self.canvas.create_line(0,int(self.canvas_size/2),self.canvas_size,int(self.canvas_size/2), fill='gray', tags=('Coordinateline',))
 
-            for i in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):      
+            for i in range(int(self.canvas_size/2),self.canvas_size-50,int((self.canvas_size/2)/5)):      
                 x,y=self.Transform(i,i)
                 if i == int(self.canvas_size/2): self.canvas.create_text(i,i,text=0, anchor=tk.NE, tags=('Coordinateline',),fill='gray')
                 else:
-                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
-                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y), anchor=tk.N, tags=('Coordinateline',),fill='gray')
 
 
-            for j in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):
+            for j in range(int(self.canvas_size/2),self.canvas_size-50,int((self.canvas_size/2)/5)):
                 i=self.canvas_size-j
                 x,y=self.Transform(i,i)
                 if i == int(self.canvas_size/2): self.canvas.create_text(i,i,text=0, anchor=tk.NE, tags=('Coordinateline',),fill='gray')
                 else:
-                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
-                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y), anchor=tk.N, tags=('Coordinateline',),fill='gray')
 
             self.canvas.create_text(self.canvas_size/2+10,10, text='y', tags=('Coordinateline',),fill='gray')
             self.canvas.create_text(self.canvas_size,self.canvas_size/2+10, text='x', tags=('Coordinateline',),fill='gray')
@@ -313,9 +317,10 @@ class App(tk.Frame):
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n A research-based simulation on vector fields,\n divergence, and curl.')
             self.fieldscannercheckbox.config(text='Field scanner')
+            self.paddlewheelcheckbox.config(text='Paddlewheel')
             self.Input_label_fieldscanner.config(text='Step for fieldscanner: ')
             self.Field_Label.config(text='Define the vector field:')
-            self.Divergenz_Label.config(text='Divergence')
+            self.Divergenz_Label.config(text='Divergence of F')
             self.Divergenz_Output.config(text='')
             self.Flux_Label.config(text='Flux through area')
             self.Flux_Output.config(text='')
@@ -326,7 +331,7 @@ class App(tk.Frame):
             self.checkbox_partialy.config(text='Highlight y components')
             self.checkbox_partialx.config(text='Highlight x components')
             self.checkbox.config(text='Show coordinate axes ')
-            self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
+            self.checkbox_RectVec.config(text="Highlight the projections onto the area's curve normal")
             self.but1.config(text='Show field!')
             self.but_change_lang.config(text='Sprache zu Deutsch wechseln')
             self.but_end.config(text='Quit')
@@ -350,6 +355,7 @@ class App(tk.Frame):
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n Eine forschungsbasierte Simulation zu Vektorfeldern,\n Divergenz und Curl.')
             self.fieldscannercheckbox.config(text='Fieldscanner')
+            self.paddlewheelcheckbox.config(text='Schaufelrad')
             self.Input_label_fieldscanner.config(text='Schritt des Fieldscanner: ')
             self.Field_Label.config(text='Definiere das Vektorfeld:')
             self.Divergenz_Label.config(text='Divergenz von F')
@@ -363,7 +369,7 @@ class App(tk.Frame):
             self.checkbox_partialy.config(text='y-Komponente im Rechteck')
             self.checkbox_partialx.config(text='x-Komponente im Rechteck')
             self.checkbox.config(text='Koordinatensystem einblenden')
-            self.checkbox_RectVec.config(text='Projektion auf die Flächennormale einblenden')
+            self.checkbox_RectVec.config(text='Projektion auf die Kurvennormale der Fläche einblenden')
             self.but1.config(text='Berechne!')
             self.but_change_lang.config(text='Change language to English')
             self.but_end.config(text='Beenden')
@@ -382,6 +388,13 @@ class App(tk.Frame):
             self.canvas.itemconfig('field_arrow', fill='gray')
         else:
             self.canvas.itemconfig('field_arrow', fill='black')
+
+    def switch_paddlewheel(self):
+
+        if self.check_paddlewheel_var.get():
+            self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
+        else:
+            self.animate_list = []
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
@@ -390,38 +403,55 @@ class App(tk.Frame):
             messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at the University of Goettingen in the Physics Education Research group (Prof. Dr. Pascal Klein) for teaching purposes. Contact details for feedback and questions: Simon Blaue, Larissa Hahn (larissa.hahn@uni-goettingen.de). The code was written in python using the sympy package. Version: April 2022. ')
     def help_field(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Es müssen Operatoren zwischen Zahlen und Variablen verwendet werden. Durch Bewegen des Sliders kann die Anzahl der Vektoren im feld variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
+            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Es müssen Operatoren zwischen Zahlen und Variablen verwendet werden. Durch Bewegen des Sliders kann die Anzahl der Vektoren im Feld variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
         else:
             messagebox.showinfo('Field F','Define the field components by entering x, y, scalars, and mathematical operators (+, -, *, /). Root operations, tangens functions, exponential functions and absolute operations are not possible. Operators have to be uesed in between numbers and variables. Move the slider to change the number of vectors in the field. Activate the box to show the axes of the coordinate system.')
     def help_divergenz(self):
         if self.checklanguage == 'DE':
             if self.integral_kind.get() == 'Satz von Gauß':
-                messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch die aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an die Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
+                messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch den Rand der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an den Rand der Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
             else:
-                messagebox.showinfo('Roatation von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Der Fluss entlang der Randkurve der aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Projektion auf den Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Rotation an (in a.u.). Mit dem Fieldscanner können Vektorpfade nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade.')
+                messagebox.showinfo('Roatation von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Durch Aktivierung der Box wird ein Schaufelrad in das Feld eingefügt. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Rechteck und Rad können mit der Maus im Feld bewegt und die Ränder des Rechtecks können beliebig verschoben werden. Der Fluss entlang der Randkurve der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks oder in der Umgebung des Schaufelrads eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Rotation (Curl) an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die vektoriellen Wegelemente der Rechteckkurve wird durch Aktivierung der Box eingeblendet.')
         else:
             if self.integral_kind.get() == "Gauss' theorem":
-                messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the rectangle area is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
+                messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
             else:
-                messagebox.showinfo('Curl of F','Draw rectangles as test areas using the mouse. The flow along the boundary of the rectangle area is displayed (Indication in abitrary units a.u.). Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outline. Use the right mouse button to show the value of curl at any spot (in a.u.). With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
+                messagebox.showinfo('Curl of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. By activating the box, a paddlewheel will be displayed. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow along the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the curl (in a.u.) at that point. The projection of the field components onto the vectorial line element is shown by activating the box.")
+    def help_integral(self):
+        if self.checklanguage == 'DE':
+            if self.integral_kind.get() == 'Satz von Gauß':
+                messagebox.showinfo('Hinweis','Die Simulation nutzt die Definition des Satzes von Gauß in zwei Dimensionen.')
+            else:
+                messagebox.showinfo('Hinweis','Die Simulation nutzt die Definition des Satzes von Stokes in zwei Dimensionen.')
+        else:
+            if self.integral_kind.get() == "Gauss' theorem":
+                messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of gauss' theorem")
+            else:
+                messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of stokes' theorem")
 ## -------- Changed Dropdown
 
     def changedDropDown(self,mode):
         if mode == "Stokes' theorem" or mode == "Satz von Stokes" :
+            self.paddlewheelcheckbox.grid(row=2,sticky=tk.W)
+            self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(117,0))
             if self.checklanguage ==  'DE':
                 self.Divergenz_Label.config(text='Rotation von F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Wegintegral')
-                self.checkbox_RectVec.config(text='Projektion auf das Linienelement einblenden')
+                self.checkbox_RectVec.config(text='Projektion auf das vektorielle Wegelement einblenden')
             else:
                 self.Divergenz_Label.config(text='Curl')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Line integral')
-                self.checkbox_RectVec.config(text='Highlight projection onto the line segments')
+                self.checkbox_RectVec.config(text='Highlight projection onto the vectorial line element')
             self.Image_Latex=tk.PhotoImage(file='Latex_Stokes.png')
             self.Display_Image.config(image=self.Image_Latex,bg=bg)
             if self.Field: self.draw_line_arrows()
         else:
+            self.animate_list = []
+            self.check_paddlewheel_var.set(False)
+            self.paddlewheelcheckbox.grid(row=0,sticky=tk.W)
+            self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(100,0))
             self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
             self.Display_Image.config(image=self.Image_Latex,bg=bg)
             if self.Field: self.draw_surface_arrows()
@@ -429,12 +459,12 @@ class App(tk.Frame):
                 self.Divergenz_Label.config(text='Divergenz von F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Fluss durch Fläche')
-                self.checkbox_RectVec.config(text='Projektion auf die Flächennormale einblenden')
+                self.checkbox_RectVec.config(text='Projektion auf die Kurvennormale der Fläche einblenden')
             else:
-                self.Divergenz_Label.config(text='Divergence')
+                self.Divergenz_Label.config(text='Divergence of F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Flux through area')
-                self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
+                self.checkbox_RectVec.config(text="Highlight the projections onto the area's curve normal")
             
 
 ## -------- OnClick Events
@@ -443,7 +473,8 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_start(event)
         elif self.check_paddlewheel_var.get() == True:
-            return
+            self.animate_list=[]
+            self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.startRect(event)
             
@@ -462,7 +493,8 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_moved(event)
         elif self.check_paddlewheel_var.get() == True:
-            return
+            self.animate_list=[]
+            self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.scaleRect(event)
 
@@ -473,6 +505,7 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_stoped(event)
         elif self.check_paddlewheel_var.get() == True:
+            self.animate_list=[]
             self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.stopRect(event)
@@ -975,17 +1008,17 @@ class App(tk.Frame):
     def field_scanner_wheel(self,x,y):
         curl = self.Field.curl_at(self.Transform(x,y)[0],self.Transform(x,y)[1])
         if  curl > 0:
-            f = 'arrow-counterclockwise.png'
+            f = 'paddlewheel.png'
             img = Image.open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
             self.animate_list.append(wheel)
         elif curl < 0:
-            f = 'arrow-clockwise.png'
+            f = 'paddlewheel.png'
             img = Image .open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
             self.animate_list.append(wheel)
         else:
-            f = 'arrow-clockwise.png'
+            f = 'paddlewheel.png'
             img = Image .open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,0)
             self.animate_list.append(wheel)
@@ -1018,9 +1051,9 @@ class App(tk.Frame):
 
     def Transform(self,x,y):  #koordinatentransformation für jeweils ein Tupel (x,y)
         c = self.canvas_size/2
-        skale_by_vectornumber=self.canvas_size/self.slider.get()
-        x = (x-c)/skale_by_vectornumber
-        y = (c-y)/skale_by_vectornumber
+        scale = (self.canvas_size/2)/10
+        x = (x-c)/scale
+        y = (c-y)/scale
         return (x,y)
 
 
