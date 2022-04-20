@@ -320,7 +320,7 @@ class App(tk.Frame):
             self.paddlewheelcheckbox.config(text='Paddlewheel')
             self.Input_label_fieldscanner.config(text='Step for fieldscanner: ')
             self.Field_Label.config(text='Define the vector field:')
-            self.Divergenz_Label.config(text='Divergence')
+            self.Divergenz_Label.config(text='Divergence of F')
             self.Divergenz_Output.config(text='')
             self.Flux_Label.config(text='Flux through area')
             self.Flux_Output.config(text='')
@@ -331,7 +331,7 @@ class App(tk.Frame):
             self.checkbox_partialy.config(text='Highlight y components')
             self.checkbox_partialx.config(text='Highlight x components')
             self.checkbox.config(text='Show coordinate axes ')
-            self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
+            self.checkbox_RectVec.config(text="Highlight the projections onto the area's curve normal")
             self.but1.config(text='Show field!')
             self.but_change_lang.config(text='Sprache zu Deutsch wechseln')
             self.but_end.config(text='Quit')
@@ -369,7 +369,7 @@ class App(tk.Frame):
             self.checkbox_partialy.config(text='y-Komponente im Rechteck')
             self.checkbox_partialx.config(text='x-Komponente im Rechteck')
             self.checkbox.config(text='Koordinatensystem einblenden')
-            self.checkbox_RectVec.config(text='Projektion auf die Flächennormale einblenden')
+            self.checkbox_RectVec.config(text='Projektion auf die Kurvennormale der Fläche einblenden')
             self.but1.config(text='Berechne!')
             self.but_change_lang.config(text='Change language to English')
             self.but_end.config(text='Beenden')
@@ -403,20 +403,20 @@ class App(tk.Frame):
             messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at the University of Goettingen in the Physics Education Research group (Prof. Dr. Pascal Klein) for teaching purposes. Contact details for feedback and questions: Simon Blaue, Larissa Hahn (larissa.hahn@uni-goettingen.de). The code was written in python using the sympy package. Version: April 2022. ')
     def help_field(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Es müssen Operatoren zwischen Zahlen und Variablen verwendet werden. Durch Bewegen des Sliders kann die Anzahl der Vektoren im feld variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
+            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Es müssen Operatoren zwischen Zahlen und Variablen verwendet werden. Durch Bewegen des Sliders kann die Anzahl der Vektoren im Feld variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
         else:
             messagebox.showinfo('Field F','Define the field components by entering x, y, scalars, and mathematical operators (+, -, *, /). Root operations, tangens functions, exponential functions and absolute operations are not possible. Operators have to be uesed in between numbers and variables. Move the slider to change the number of vectors in the field. Activate the box to show the axes of the coordinate system.')
     def help_divergenz(self):
         if self.checklanguage == 'DE':
             if self.integral_kind.get() == 'Satz von Gauß':
-                messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch die aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an die Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
+                messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch den Rand der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an den Rand der Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
             else:
-                messagebox.showinfo('Roatation von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Der Fluss entlang der Randkurve der aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Projektion auf den Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Rotation an (in a.u.). Mit dem Fieldscanner können Vektorpfade nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade.')
+                messagebox.showinfo('Roatation von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Durch Aktivierung der Box wird ein Schaufelrad in das Feld eingefügt. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Rechteck und Rad können mit der Maus im Feld bewegt und die Ränder des Rechtecks können beliebig verschoben werden. Der Fluss entlang der Randkurve der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks oder in der Umgebung des Schaufelrads eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Rotation (Curl) an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die vektoriellen Wegelemente der Rechteckkurve wird durch Aktivierung der Box eingeblendet.')
         else:
             if self.integral_kind.get() == "Gauss' theorem":
-                messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the rectangle area is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
+                messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
             else:
-                messagebox.showinfo('Curl of F','Draw rectangles as test areas using the mouse. The flow along the boundary of the rectangle area is displayed (Indication in abitrary units a.u.). Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outline. Use the right mouse button to show the value of curl at any spot (in a.u.). With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
+                messagebox.showinfo('Curl of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. By activating the box, a paddlewheel will be displayed. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow along the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the curl (in a.u.) at that point. The projection of the field components onto the vectorial line element is shown by activating the box.")
     def help_integral(self):
         if self.checklanguage == 'DE':
             if self.integral_kind.get() == 'Satz von Gauß':
@@ -438,12 +438,12 @@ class App(tk.Frame):
                 self.Divergenz_Label.config(text='Rotation von F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Wegintegral')
-                self.checkbox_RectVec.config(text='Projektion auf das Linienelement einblenden')
+                self.checkbox_RectVec.config(text='Projektion auf das vektorielle Wegelement einblenden')
             else:
                 self.Divergenz_Label.config(text='Curl')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Line integral')
-                self.checkbox_RectVec.config(text='Highlight projection onto the line segments')
+                self.checkbox_RectVec.config(text='Highlight projection onto the vectorial line element')
             self.Image_Latex=tk.PhotoImage(file='Latex_Stokes.png')
             self.Display_Image.config(image=self.Image_Latex,bg=bg)
             if self.Field: self.draw_line_arrows()
@@ -459,12 +459,12 @@ class App(tk.Frame):
                 self.Divergenz_Label.config(text='Divergenz von F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Fluss durch Fläche')
-                self.checkbox_RectVec.config(text='Projektion auf die Flächennormale einblenden')
+                self.checkbox_RectVec.config(text='Projektion auf die Kurvennormale der Fläche einblenden')
             else:
-                self.Divergenz_Label.config(text='Divergence')
+                self.Divergenz_Label.config(text='Divergence of F')
                 self.Divergenz_Output.config(text='')
                 self.Flux_Label.config(text='Flux through area')
-                self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
+                self.checkbox_RectVec.config(text="Highlight the projections onto the area's curve normal")
             
 
 ## -------- OnClick Events
