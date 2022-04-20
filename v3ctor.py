@@ -393,8 +393,10 @@ class App(tk.Frame):
     def switch_paddlewheel(self):
 
         if self.check_paddlewheel_var.get():
+            self.canvas.itemconfig('field_arrow', fill='gray')
             self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
         else:
+            self.canvas.itemconfig('field_arrow', fill='black')
             self.animate_list = []
 ## -------- Info Buttons
     def Impressum(self):
