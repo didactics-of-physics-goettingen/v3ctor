@@ -413,7 +413,7 @@ class App(tk.Frame):
             else:
                 messagebox.showinfo('Hinweis','Die Simulation nutzt die Definition des Satzes von Stokes in zwei Dimensionen.')
         else:
-            if self.integral_kind.get() == "Gauss' Theorem":
+            if self.integral_kind.get() == "Gauss' theorem":
                 messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of gauss' theorem")
             else:
                 messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of stokes' theorem")
