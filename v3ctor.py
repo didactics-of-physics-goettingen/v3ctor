@@ -7,7 +7,7 @@ import math as mt
 from field import VectorField2d
 from PIL import ImageTk, Image
 import time
-
+#na bitte
 
 class Paddlewheel(object):
     def __init__(self,canvas,x,y,img,angle,velocity):
