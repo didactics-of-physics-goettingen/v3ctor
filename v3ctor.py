@@ -162,6 +162,13 @@ class App(tk.Frame):
         self.Divergenz_Frame=tk.Frame(self.body_left,bd=20,bg=bg)
         self.Divergenz_Frame.grid(row=4,column=0,sticky=tk.W+tk.N,padx=(30,0),pady=30)
 
+        #Paddle Wheel
+        self.check_paddlewheel_var = tk.BooleanVar()
+        self.check_paddlewheel_var.set(False)
+        self.paddlewheelcheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Paddlewheel', variable=self.check_paddlewheel_var,command=self.switch_paddlewheel,font=(font,12),fg=fg,bg=bg)
+        self.paddlewheelcheckbox.grid(row=0,sticky=tk.W)
+        
+        #Divergenz Label
         self.Divergenz_Label=tk.Label(self.Divergenz_Frame,text='Divergenz von F',font=(font,16),bg=bg,fg=fg)
         self.Divergenz_Label.grid(row=0,sticky=tk.W)
         
@@ -171,11 +178,6 @@ class App(tk.Frame):
         self.fieldscannercheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Feld abtasten', variable=self.check_fieldscanner_var,command=self.switch_fieldscanner,font=(font,12),fg=fg,bg=bg)
         self.fieldscannercheckbox.grid(row=1,sticky=tk.W)
         
-        #Paddle Wheel
-        self.check_paddlewheel_var = tk.BooleanVar()
-        self.check_paddlewheel_var.set(False)
-        self.paddlewheelcheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Paddlewheel', variable=self.check_paddlewheel_var,font=(font,12),fg=fg,bg=bg)
-        self.paddlewheelcheckbox.grid(row=2,sticky=tk.W)
 
         #Abstandsinput fieldscanner
         self.Input_label_fieldscanner=tk.Label(self.Divergenz_Frame,text='Schrittweite des Fieldsanners: ',bg=bg, font=(font,12),fg=fg)
@@ -213,11 +215,11 @@ class App(tk.Frame):
         #Toggle für Normal/Lininevektoren des Rechtecks
         self.check_var_RectVec = tk.BooleanVar()
         self.check_var_RectVec.set(False)
-        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Normalenvektoren einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=(font,12),fg=fg,bg=bg) 
+        self.checkbox_RectVec = tk.Checkbutton(self.Flux_Frame, text='Projektion auf die Kurvennormale der Fläche einblenden', variable=self.check_var_RectVec , command=self.toggleRectVec, font=(font,12),fg=fg,bg=bg) 
         self.checkbox_RectVec.grid(row=1,sticky=tk.W,)
 
         self.Flux_output_Frame=tk.Frame(self.Flux_Frame,bg='darkblue',border=2)
-        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(117,0))
+        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(10,0))
 
         self.Flux_Output=tk.Label(self.Flux_output_Frame,text='',font=(font,16),fg=fg,bg=bg,width=12)
         self.Flux_Output.grid()
@@ -261,21 +263,21 @@ class App(tk.Frame):
             self.canvas.create_line(int(self.canvas_size/2),0,int(self.canvas_size/2),self.canvas_size, fill='gray' , tags=('Coordinateline',))
             self.canvas.create_line(0,int(self.canvas_size/2),self.canvas_size,int(self.canvas_size/2), fill='gray', tags=('Coordinateline',))
 
-            for i in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):      
+            for i in range(int(self.canvas_size/2),self.canvas_size-50,int((self.canvas_size/2)/5)):      
                 x,y=self.Transform(i,i)
                 if i == int(self.canvas_size/2): self.canvas.create_text(i,i,text=0, anchor=tk.NE, tags=('Coordinateline',),fill='gray')
                 else:
-                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
-                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y), anchor=tk.N, tags=('Coordinateline',),fill='gray')
 
 
-            for j in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):
+            for j in range(int(self.canvas_size/2),self.canvas_size-50,int((self.canvas_size/2)/5)):
                 i=self.canvas_size-j
                 x,y=self.Transform(i,i)
                 if i == int(self.canvas_size/2): self.canvas.create_text(i,i,text=0, anchor=tk.NE, tags=('Coordinateline',),fill='gray')
                 else:
-                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
-                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y,1), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(i,int(self.canvas_size/2),text=round(x), anchor=tk.N, tags=('Coordinateline',),fill='gray')
+                    self.canvas.create_text(int(self.canvas_size/2),i,text=round(y), anchor=tk.N, tags=('Coordinateline',),fill='gray')
 
             self.canvas.create_text(self.canvas_size/2+10,10, text='y', tags=('Coordinateline',),fill='gray')
             self.canvas.create_text(self.canvas_size,self.canvas_size/2+10, text='x', tags=('Coordinateline',),fill='gray')
@@ -315,6 +317,7 @@ class App(tk.Frame):
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n A research-based simulation on vector fields,\n divergence, and curl.')
             self.fieldscannercheckbox.config(text='Field scanner')
+            self.paddlewheelcheckbox.config(text='Paddlewheel')
             self.Input_label_fieldscanner.config(text='Step for fieldscanner: ')
             self.Field_Label.config(text='Define the vector field:')
             self.Divergenz_Label.config(text='Divergence')
@@ -352,6 +355,7 @@ class App(tk.Frame):
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n Eine forschungsbasierte Simulation zu Vektorfeldern,\n Divergenz und Curl.')
             self.fieldscannercheckbox.config(text='Fieldscanner')
+            self.paddlewheelcheckbox.config(text='Schaufelrad')
             self.Input_label_fieldscanner.config(text='Schritt des Fieldscanner: ')
             self.Field_Label.config(text='Definiere das Vektorfeld:')
             self.Divergenz_Label.config(text='Divergenz von F')
@@ -384,6 +388,13 @@ class App(tk.Frame):
             self.canvas.itemconfig('field_arrow', fill='gray')
         else:
             self.canvas.itemconfig('field_arrow', fill='black')
+
+    def switch_paddlewheel(self):
+
+        if self.check_paddlewheel_var.get():
+            self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
+        else:
+            self.animate_list = []
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
@@ -421,6 +432,8 @@ class App(tk.Frame):
 
     def changedDropDown(self,mode):
         if mode == "Stokes' theorem" or mode == "Satz von Stokes" :
+            self.paddlewheelcheckbox.grid(row=2,sticky=tk.W)
+            self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(117,0))
             if self.checklanguage ==  'DE':
                 self.Divergenz_Label.config(text='Rotation von F')
                 self.Divergenz_Output.config(text='')
@@ -435,6 +448,10 @@ class App(tk.Frame):
             self.Display_Image.config(image=self.Image_Latex,bg=bg)
             if self.Field: self.draw_line_arrows()
         else:
+            self.animate_list = []
+            self.check_paddlewheel_var.set(False)
+            self.paddlewheelcheckbox.grid(row=0,sticky=tk.W)
+            self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(100,0))
             self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
             self.Display_Image.config(image=self.Image_Latex,bg=bg)
             if self.Field: self.draw_surface_arrows()
@@ -456,7 +473,8 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_start(event)
         elif self.check_paddlewheel_var.get() == True:
-            return
+            self.animate_list=[]
+            self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.startRect(event)
             
@@ -475,7 +493,8 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_moved(event)
         elif self.check_paddlewheel_var.get() == True:
-            return
+            self.animate_list=[]
+            self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.scaleRect(event)
 
@@ -486,6 +505,7 @@ class App(tk.Frame):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_stoped(event)
         elif self.check_paddlewheel_var.get() == True:
+            self.animate_list=[]
             self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.stopRect(event)
@@ -988,17 +1008,17 @@ class App(tk.Frame):
     def field_scanner_wheel(self,x,y):
         curl = self.Field.curl_at(self.Transform(x,y)[0],self.Transform(x,y)[1])
         if  curl > 0:
-            f = 'arrow-counterclockwise.png'
+            f = 'paddlewheel.png'
             img = Image.open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
             self.animate_list.append(wheel)
         elif curl < 0:
-            f = 'arrow-clockwise.png'
+            f = 'paddlewheel.png'
             img = Image .open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
             self.animate_list.append(wheel)
         else:
-            f = 'arrow-clockwise.png'
+            f = 'paddlewheel.png'
             img = Image .open(f)
             wheel = Paddlewheel(self.canvas,x,y,img,0,0)
             self.animate_list.append(wheel)
@@ -1031,9 +1051,9 @@ class App(tk.Frame):
 
     def Transform(self,x,y):  #koordinatentransformation für jeweils ein Tupel (x,y)
         c = self.canvas_size/2
-        skale_by_vectornumber=self.canvas_size/self.slider.get()
-        x = (x-c)/skale_by_vectornumber
-        y = (c-y)/skale_by_vectornumber
+        scale = (self.canvas_size/2)/10
+        x = (x-c)/scale
+        y = (c-y)/scale
         return (x,y)
 
 
