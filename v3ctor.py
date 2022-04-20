@@ -105,6 +105,8 @@ class App(tk.Frame):
         self.Menu.grid(row=0,column=0, padx=(180))
         #self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
 
+        self.Info_Button_Integral = tk.Button(self.body_left,text='i',font=('Times',12),bg=bg,fg=fg, border=0, command=self.help_integral)
+        self.Info_Button_Integral.grid(row=1, column=0)
 
         if self.integral_kind.get() == "Satz von Gauß":
             self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
@@ -404,6 +406,17 @@ class App(tk.Frame):
                 messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the rectangle area is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
             else:
                 messagebox.showinfo('Curl of F','Draw rectangles as test areas using the mouse. The flow along the boundary of the rectangle area is displayed (Indication in abitrary units a.u.). Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outline. Use the right mouse button to show the value of curl at any spot (in a.u.). With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
+    def help_integral(self):
+        if self.checklanguage == 'DE':
+            if self.integral_kind.get() == 'Satz von Gauß':
+                messagebox.showinfo('Hinweis','Die Simulation nutzt die Definition des Satzes von Gauß in zwei Dimensionen.')
+            else:
+                messagebox.showinfo('Hinweis','Die Simulation nutzt die Definition des Satzes von Stokes in zwei Dimensionen.')
+        else:
+            if self.integral_kind.get() == "Gauss' Theorem":
+                messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of gauss' theorem")
+            else:
+                messagebox.showinfo('Hint',"The simulation uses the two dimensional definition of stokes' theorem")
 ## -------- Changed Dropdown
 
     def changedDropDown(self,mode):
