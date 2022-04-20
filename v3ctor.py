@@ -1,93 +1,32 @@
-'''
-Programm zum Darstellen von 2D-Vektorfelden und zur Visualisierung der Divergenz und Rotation des Feldes
-über die jeweiligen Integrale nach Gauss und Stokes. 
-Benötigt das Packet sympy und python Version 3.
-09.03.2021:
-    -Field scanner ausbauen
-    - Fehler der Felderzeugung und der Koordinatenachsen behoebn
-
-08.03.2021:
-    - Modus Field scanner einbinden
-
-04.03.2021:
-    - marginale überarbeitung des layouts
-    -scale überarbeiten
-
-02.03.2021:
-    -totale Überarbeitungen der GUI
-    -einbinden von Hilfe Buttons
-
-15.02.2021:
-    -Exe Datei erstellt
-    -Icon erstellt
-    _label für werte angepasst
-    -angefangen an Version 2.0 zu arbeiten -> überarbeitetes Layout
-
-11.02.2021:
-    -Berechnen der Div/Rot an einer Stelle mit rechter Maustaste
-
-10.02.2021:
-    -Bugfixes
-    -englische Version
-
-05.02.2021:
-    -weitere Arbeit an Bug fixes
-    -Sortieren der GUI
-    -Einführen eines Toggels für Normalenvektoren des Rechtecks
-
-02.02.2021 und 05.02.2021:
-    -Bug fix der Divergenz/Integral VZ -> Hilfsfkt Transform
-
-01.02.2021:
-    - default feld  (x,0)
-    - überarbeite des Verzereren des rechtecks
-    - Rechtsklick: divergenz bzw Rotation des Feldes an der Stelle
-    -herraus und reinzomm interaktiv
-    -Label der Achsen anbringen
-
-25.01.2021:
-    -entfernen von einigen Terminalausgaben
-    -Farbe reduzieren der äußeren Vektoren
-    -erzeugen der Checkboxen für partielle Ableitungen
-
-21.01.2021
-    - Pfeile im Rechteck bleiben während des veränderen des Rechtecks erhalten
-    - x,y antiele der Vektoren innerhalb des Rechtecks anzeigen.
-
-15.01.2021
-    - Verändern des Cursors beim überfahren der Rechtecklinie und im Rechteck
-    - arbitrary unit für den Wert der Integrale eingefügt
-    - Vektorskalierung überarbeitet für konstante Felder
-        -> entfernen der Funktion "calc_coordinate", da dies direkt in den Schleifen gelöst wird
-
-11.01.2021
-    - größe ändern des rechtecks durch ziehen der Kanten mit der Maus
-       -> Beim Beenden des Rechtecks werden nun immer die Koordinaten sortiert  -- Notiz: Kann nun vielleicht auhc in den anderen Funktionen die darauf aufbauen entfernt werden. -> noch zu testen. 
-       -> hinzufügen der Koordinaten für das zuvor gezeichnete Rechteck
-    -entfernung der activecolor
-
-
-6.01.2021:
-    -vorbereitung für Änderung der Größe des Rechtecks durch aufziehen der Kanten
-
-30.12.2020:
-    - Grafische Anpassung an MacOS
-       -> Entfernung vom Stipple und Farben des Textes einstellen
-
-
-29.12.2020: 
-    -Layout des Programms durch grid Funktionalität
-    -Skalieren der Koordinaten bei Veränderung der Anzahl der Vektoren
-    -Skalieren des Wertes des Integrals
-    -Erkennung wenn auf eine der Seiten des Rechtecks geklickt wurde
-
-
-'''
-
+from random import gauss
 import tkinter as tk  #Modul für GUI
 from tkinter import messagebox
 import sympy as sy   # Modul für Symbolisieren des Eingabevektorfeldes
+import scipy.integrate as sc_int
 import math as mt
+from field import VectorField2d
+from PIL import ImageTk, Image
+import time
+
+
+class Paddlewheel(object):
+    def __init__(self,canvas,x,y,img,angle,velocity):
+        self.canvas = canvas
+        self.img = img
+        self.tkimg = ImageTk.PhotoImage(img)
+        self.id = canvas.create_image(x,y,image=self.tkimg, tags=('curlwheel',))
+        self.x = x
+        self.y = y
+        self.angle = angle
+        self.velocity = velocity
+
+    def rotate(self):
+        self.canvas.delete(self.id)
+        self.tkimg = ImageTk.PhotoImage(self.img.rotate(self.angle))
+        self.id = self.canvas.create_image(self.x, self.y, image=self.tkimg,tags=('curlwheel',))
+        self.angle += self.velocity
+        self.angle %= 360
+
 
 
 class App(tk.Frame):
@@ -100,11 +39,12 @@ class App(tk.Frame):
         self._createVariables()
         self._createGUI()
         self.grid()
-        self.changelanguage()
         self._createBinding()
         self._createField()
         self.new_field()
-
+        self.changelanguage()
+        self.changelanguage()
+        self.master.after(0, self.animate)
 
 
     def _createVariables(self):
@@ -119,13 +59,16 @@ class App(tk.Frame):
 
         self.canvas_size = 650      #Größe der Anzeigefläche - Quadratisch
 
-        self.x, self.y = sy.symbols('x, y')   # Symbole die sypy zum berechnen benutzen kann.
+        self.x, self.y = sy.symbols('x, y')   # Symbole die sympy zum berechnen benutzen kann.
         self.arrow_space= 2                   # Abstand der Pfeil in px
         self.scale=1                          # Skalierungsfaktor der Pfeile
 
         self.surface_int=0                     # Wert des Flächenintegrals
         self.line_int=0                       # Wert des Linienintegrls
 
+        self.Field = None
+
+        self.animate_list = []
 
     def _createGUI(self):
 
@@ -154,17 +97,19 @@ class App(tk.Frame):
         self.labInt = tk.Label(self.body_left, text='Auswahl des Integraltheorems: ',font=(font,16),fg=fg,bg=bg)
         self.labInt.grid(row=0,column=0,sticky=tk.W, padx=10,pady=25)
 
-        self.OptionList= ["Satz von Gauss","Satz von Stokes"]
+        self.OptionList= ["Satz von Gauß","Satz von Stokes"]
         self.integral_kind = tk.StringVar(self)
         self.integral_kind.set(self.OptionList[0])
         self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
         self.Menu.config(width=15, font=(font,12),fg=fg,bg=bg)
         self.Menu.grid(row=0,column=0, padx=(180))
-        self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
+        #self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
 
 
-
-        self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
+        if self.integral_kind.get() == "Satz von Gauß":
+            self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
+        else:
+            self.Image_Latex=tk.PhotoImage(file='Latex_Stokes.png')
         self.Display_Image=tk.Label(self.body_left,image=self.Image_Latex,bg=bg)
         self.Display_Image.grid(row=2, column=0,columnspan=2,pady=20)
 
@@ -198,7 +143,7 @@ class App(tk.Frame):
         self.but1.grid(row=2,column=0,columnspan=2,sticky=tk.W)
 
         #Slider zum einstellen der Anzahl an Vektoren
-        self.slider = tk.Scale(self.Field_Frame,from_=5, to=25, orient=tk.HORIZONTAL, length=250, label='Anzahl der Vektoren',font=(font,12),fg=fg,bg=bg, command=self.zoom) #Slider für Anzahl der Vektoren in einer Spalte/Zeile
+        self.slider = tk.Scale(self.Field_Frame,from_=5, to=25, orient=tk.HORIZONTAL, length=250, label='Anzahl der Vektoren',font=(font,12),fg=fg,bg=bg, command=self.new_field_return) #Slider für Anzahl der Vektoren in einer Spalte/Zeile
         self.slider.set(10)
         self.slider.grid(row=3,column=0,columnspan=2,sticky=tk.W)
 
@@ -224,27 +169,33 @@ class App(tk.Frame):
         self.fieldscannercheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Feld abtasten', variable=self.check_fieldscanner_var,command=self.switch_fieldscanner,font=(font,12),fg=fg,bg=bg)
         self.fieldscannercheckbox.grid(row=1,sticky=tk.W)
         
+        #Paddle Wheel
+        self.check_paddlewheel_var = tk.BooleanVar()
+        self.check_paddlewheel_var.set(False)
+        self.paddlewheelcheckbox = tk.Checkbutton(self.Divergenz_Frame, text='Paddlewheel', variable=self.check_paddlewheel_var,font=(font,12),fg=fg,bg=bg)
+        self.paddlewheelcheckbox.grid(row=2,sticky=tk.W)
+
         #Abstandsinput fieldscanner
         self.Input_label_fieldscanner=tk.Label(self.Divergenz_Frame,text='Schrittweite des Fieldsanners: ',bg=bg, font=(font,12),fg=fg)
-        self.Input_label_fieldscanner.grid(row=2,column=0,sticky=tk.W)
+        self.Input_label_fieldscanner.grid(row=3,column=0,sticky=tk.W)
         
         self.Input_fieldscanner=tk.Entry(self.Divergenz_Frame,textvariable=tk.IntVar(self, value=15),width=2,bg=bg,font=(font,12),fg=fg)
-        self.Input_fieldscanner.grid(row=2,column=0,padx=(160,0),sticky=tk.W)
+        self.Input_fieldscanner.grid(row=4,column=0,padx=(160,0),sticky=tk.W)
 
         #Schalter zum Einbelden der Partiellen Richtungen in X im Rechteck
         self.check_var_partialx = tk.BooleanVar()
         self.check_var_partialx.set(False)
         self.checkbox_partialx = tk.Checkbutton(self.Divergenz_Frame, text='x-Komponente im Rechteck', variable=self.check_var_partialx , command=self.catch_inRect_vec, font=(font,12),fg=fg,bg=bg) 
-        self.checkbox_partialx.grid(row=3,sticky=tk.W)
+        self.checkbox_partialx.grid(row=5,sticky=tk.W)
 
         #Schalter zum Einbelden der Partiellen Richtungen in Y im Rechteck
         self.check_var_partialy = tk.BooleanVar()
         self.check_var_partialy.set(False)
         self.checkbox_partialy = tk.Checkbutton(self.Divergenz_Frame, text='y-Komponente im Rechteck', variable=self.check_var_partialy , command=self.catch_inRect_vec, font=(font,12),fg=fg,bg=bg) 
-        self.checkbox_partialy.grid(row=4,sticky=tk.W)
+        self.checkbox_partialy.grid(row=6,sticky=tk.W)
 
         self.Divergenz_output_Frame=tk.Frame(self.Divergenz_Frame,bg='darkblue',border=2)
-        self.Divergenz_output_Frame.grid(row=5,sticky=tk.W,pady=(5,0))
+        self.Divergenz_output_Frame.grid(row=7,sticky=tk.W,pady=(5,0))
 
         self.Divergenz_Output=tk.Label(self.Divergenz_output_Frame,text=' ',font=(font,16),bg=bg,fg=fg,width=12)
         self.Divergenz_Output.grid(sticky=tk.W)
@@ -264,7 +215,7 @@ class App(tk.Frame):
         self.checkbox_RectVec.grid(row=1,sticky=tk.W,)
 
         self.Flux_output_Frame=tk.Frame(self.Flux_Frame,bg='darkblue',border=2)
-        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(90,0))
+        self.Flux_output_Frame.grid(row=2,sticky=tk.W,padx=2,pady=(117,0))
 
         self.Flux_Output=tk.Label(self.Flux_output_Frame,text='',font=(font,16),fg=fg,bg=bg,width=12)
         self.Flux_Output.grid()
@@ -296,18 +247,10 @@ class App(tk.Frame):
 
 
 
-    def _createField(self): #liest Feld aus eingabe ein und übergibt sie als Sympy Expression
+    def _createField(self): #liest Feld aus eingabe ein 
         fieldstring1=self.input1.get()
         fieldstring2=self.input2.get()
-        if fieldstring1== '':
-            fieldstring1 = '0'
-        if fieldstring2== '':
-            fieldstring2 = '0'
-        expr1 = sy.S(fieldstring1)
-        expr2 = sy.S(fieldstring2)
-        print("Fx= ",expr1)
-        print("Fy= ",expr2)
-        self.F = (expr1,expr2)
+        self.Field = VectorField2d(fieldstring1,fieldstring2)
 
     def _createCoordinatelines(self):  #Erzeugen des Koordinantensystems
         if self.check_var.get()==True:
@@ -345,29 +288,28 @@ class App(tk.Frame):
 
     def changedDropDown(self,integral_kind):
         if self.rectid != None:
-            if self.fintegral_kind.get() == 'Satz von Gauss' or "Gauss' theorem" :
+            if self.integral_kind.get() == 'Satz von Gauß' or "Gauss' theorem" :
                 self.draw_surface_arrows()
             elif self.integral_kind.get() == 'Satz von Stokes' or "Stokes' theorem":
                 self.draw_line_arrows()
 
 
     def toggleRectVec(self):
-        if self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() == "Gauss' theorem" :
+        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
             self.draw_surface_arrows()
         elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
             self.draw_line_arrows()
 
-    def zoom(self,k):
-        self.new_field(zoomed=True)
 
     def changelanguage(self):
+        self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow','curlwheel')
+        self.rectx0 = 0     
+        self.recty0 = 0
+        self.rectx1 = 0
+        self.recty1 = 0
+        self.animate_list = []
         if self.checklanguage == 'DE':
-            self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow')
-            self.rectx0 = 0     
-            self.recty0 = 0
-            self.rectx1 = 0
-            self.recty1 = 0
-
+            self.checklanguage='EN'
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n A research-based simulation on vector fields,\n divergence, and curl.')
             self.fieldscannercheckbox.config(text='Field scanner')
@@ -394,15 +336,16 @@ class App(tk.Frame):
             self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
             self.Menu.config(width=15, font=(font,12),fg=fg, bg=bg)
             self.Menu.grid(row=0,column=0, padx=180)
-            self.Menu['menu'].entryconfigure("Stokes' theorem",state='disabled')
+            self.changedDropDown(self.integral_kind.get())
 
-            self.checklanguage='EN'
         else:
-            self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow')
+            self.checklanguage= 'DE'
+            self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow','curlwheel')
             self.rectx0 = 0     
             self.recty0 = 0
             self.rectx1 = 0
             self.recty1 = 0
+            self.animate_list = []
 
             self.Menu.destroy()
             self.Header_Label_left.config(text='vere vedi vecu \n Eine forschungsbasierte Simulation zu Vektorfeldern,\n Divergenz und Curl.')
@@ -425,62 +368,101 @@ class App(tk.Frame):
             self.but_change_lang.config(text='Change language to English')
             self.but_end.config(text='Beenden')
 
-            self.OptionList = ['Satz von Gauss','Satz von Stokes']
+            self.OptionList = ['Satz von Gauß','Satz von Stokes']
             self.integral_kind.set(self.OptionList[0])
             self.Menu = tk.OptionMenu(self.body_left, self.integral_kind, *self.OptionList, command=self.changedDropDown)
             self.Menu.config(width=15, font=(font,12),fg=fg,bg=bg)
-            self.Menu.grid(row=0,column=0, padx=180)
-            self.Menu['menu'].entryconfigure('Satz von Stokes',state='disabled')
+            self.Menu.grid(row=0,column=0, padx=180)      
+            self.changedDropDown(self.integral_kind.get())
 
-
-            self.checklanguage= 'DE'
 
 
     def switch_fieldscanner(self):
         if self.check_fieldscanner_var.get() == True:
             self.canvas.itemconfig('field_arrow', fill='gray')
-            self.deleteRect()
         else:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y') 
             self.canvas.itemconfig('field_arrow', fill='black')
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Impressum','Die Simulation wurde an der Fakultät für Physik in Göttingen in der Didaktik der Physik für Lehrzwecke entwickelt. Kontakt: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . Der Code ist in Python mit dem MOdul Sympy geschrieben. Version: März 2021')
+            messagebox.showinfo('Impressum','Die Simulation wurde an der Fakultät für Physik der Universität Göttingen in der Didaktik der Physik (Prof. Dr. Pascal Klein) für Lehrzwecke entwickelt. Kontakt für Feedback und Fragen: Simon Blaue, Larissa Hahn (larissa.hahn@uni-goettingen.de). Der Code ist in python mit dem Modul sympy geschrieben. Version: April 2022.')
         else:
-            messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at University of Göttingen (Physics Education Research) for teaching purposes. Contact: Larissa Hahn, Simon Blaue, Pascal Klein. Mail: larissa.hahn@uni-goettingen.de . The code was written in Python using the Sympy-package. Version: March 2021')
+            messagebox.showinfo('Impressum','The simulation was developed at the Faculty of Physics at the University of Goettingen in the Physics Education Research group (Prof. Dr. Pascal Klein) for teaching purposes. Contact details for feedback and questions: Simon Blaue, Larissa Hahn (larissa.hahn@uni-goettingen.de). The code was written in python using the sympy package. Version: April 2022. ')
     def help_field(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Durch Bewegen des Sliders kann die Anzahl der Vektoren pro Zeile/Spalte variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
+            messagebox.showinfo('Feld F','Definiere das Feld über seine Komponenten abhängig von x, y, Skalaren und den Operationen (+, -, *, /). Wurzel-Operationen, Tangensfunktionen, Betragsfunktionen und Exponentialfunktionen sind nicht möglich. Es müssen Operatoren zwischen Zahlen und Variablen verwendet werden. Durch Bewegen des Sliders kann die Anzahl der Vektoren im feld variiert werden. Durch Aktivierung der unteren Box werden die Koordinatenachsen eingeblendet.')
         else:
-            messagebox.showinfo('Field F','Define the field components by entering x, y, scalars, and mathematical operators (+, -, *, /). Root operations, tangensfunctions, exponentialfunctions and absolute operations are not possible. Move the slider to change the number of vectors that are displayed in each row or column. Show or hide the axes of the coordinate system to identify the origin (0,0) and the orientation of the axes.')
+            messagebox.showinfo('Field F','Define the field components by entering x, y, scalars, and mathematical operators (+, -, *, /). Root operations, tangens functions, exponential functions and absolute operations are not possible. Operators have to be uesed in between numbers and variables. Move the slider to change the number of vectors in the field. Activate the box to show the axes of the coordinate system.')
     def help_divergenz(self):
         if self.checklanguage == 'DE':
-            messagebox.showinfo('Divergenz von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Normalen-Projektion der Vektoren auf dem Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Divergenz an. Mit dem Fieldscanner können Vektorpfade nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade.')
+            if self.integral_kind.get() == 'Satz von Gauß':
+                messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch die aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an die Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
+            else:
+                messagebox.showinfo('Roatation von F','Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden. Der Fluss entlang der Randkurve der aufgezogene Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können x- und y-Komponente innerhalb des Rechtecks und die Projektion auf den Reckteckrand eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Wert für die Rotation an (in a.u.). Mit dem Fieldscanner können Vektorpfade nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade.')
         else:
-            messagebox.showinfo('Divergence of F','Draw rectangles as test areas using the mouse. Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outer normal vector. Use the right mouse button to show the value of divergence at any spot. With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
+            if self.integral_kind.get() == "Gauss' theorem":
+                messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the rectangle area is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
+            else:
+                messagebox.showinfo('Curl of F','Draw rectangles as test areas using the mouse. The flow along the boundary of the rectangle area is displayed (Indication in abitrary units a.u.). Click the buttons for highlighting the decomposition of vectors within the test area or visualizing the projections of the field onto the outline. Use the right mouse button to show the value of curl at any spot (in a.u.). With the fieldscanner, vector paths can be traced with the left mouse button. A rightclick deletes all drawn paths.')
+## -------- Changed Dropdown
 
+    def changedDropDown(self,mode):
+        if mode == "Stokes' theorem" or mode == "Satz von Stokes" :
+            if self.checklanguage ==  'DE':
+                self.Divergenz_Label.config(text='Rotation von F')
+                self.Divergenz_Output.config(text='')
+                self.Flux_Label.config(text='Wegintegral')
+                self.checkbox_RectVec.config(text='Projektion auf das Linienelement einblenden')
+            else:
+                self.Divergenz_Label.config(text='Curl')
+                self.Divergenz_Output.config(text='')
+                self.Flux_Label.config(text='Line integral')
+                self.checkbox_RectVec.config(text='Highlight projection onto the line segments')
+            self.Image_Latex=tk.PhotoImage(file='Latex_Stokes.png')
+            self.Display_Image.config(image=self.Image_Latex,bg=bg)
+            if self.Field: self.draw_line_arrows()
+        else:
+            self.Image_Latex=tk.PhotoImage(file='Latex_Gauss.png')
+            self.Display_Image.config(image=self.Image_Latex,bg=bg)
+            if self.Field: self.draw_surface_arrows()
+            if self.checklanguage ==  'DE':
+                self.Divergenz_Label.config(text='Divergenz von F')
+                self.Divergenz_Output.config(text='')
+                self.Flux_Label.config(text='Fluss durch Fläche')
+                self.checkbox_RectVec.config(text='Projektion auf die Flächennormale einblenden')
+            else:
+                self.Divergenz_Label.config(text='Divergence')
+                self.Divergenz_Output.config(text='')
+                self.Flux_Label.config(text='Flux through area')
+                self.checkbox_RectVec.config(text='Highlight the projections onto the outer normal')
+            
 
 ## -------- OnClick Events
 
     def B1_pressed(self,event):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_start(event)
+        elif self.check_paddlewheel_var.get() == True:
+            return
         else:
             self.startRect(event)
             
     def B2_pressed(self,event):
         if self.check_fieldscanner_var.get() == True:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
+            self.animate_list = []
         else:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
-            self.field_scanner_start(event)
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
+            self.animate_list = []
+            self.field_scanner_stoped(event)
 
 
 ## ------- OnMove Events
     def B1_Moved(self,event):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_moved(event)
+        elif self.check_paddlewheel_var.get() == True:
+            return
         else:
             self.scaleRect(event)
 
@@ -490,19 +472,20 @@ class App(tk.Frame):
     def B1_released(self,event):
         if self.check_fieldscanner_var.get() == True:
             self.field_scanner_stoped(event)
+        elif self.check_paddlewheel_var.get() == True:
+            self.field_scanner_wheel(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y))
         else:
             self.stopRect(event)
 
 
-## -------- Neues Feld nach Eingaben Erzeugen
+## -------- Neues Feld nach Enter Erzeugen
     def new_field_return(self,event):
-        self.new_field(zoomed=True)
+        self.new_field()
 
-    def new_field(self,zoomed=False):
+    def new_field(self):
         self.scale = 1
-        if zoomed == False:
-            self.canvas.delete('rec') #Leeren der Canvas
-        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
+        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
+        self.animate_list = []
         self.Divergenz_Output.config(text=f'')
         self.Flux_Output.config(text=f'')
         self.arrow_number=self.slider.get() #festlegen der Pfeile pro Reihe
@@ -511,21 +494,13 @@ class App(tk.Frame):
         self.scale=self.max_arrow_size/self.max_arrow_length() #Skalierung aller Vektoren festlegen
         self.draw_field()  #Alle Pfeile zeichnen
         self._createCoordinatelines()
-        print("max arrow size: " , self.max_arrow_length())
-        print('actual max_size: ', self.max_arrow_size)
-        print("scale: ", self.scale)
-        if zoomed == False:
-            self.rectx0 = 0     
-            self.recty0 = 0
-            self.rectx1 = 0
-            self.recty1 = 0
         if self.rectid != None:
             if self.rectx0 == self.rectx1 and self.recty0 == self.recty1:
-                if self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() == "Gauss' theorem" :
+                if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
                         self.show_divergence()
-                elif self.integral_kind.get() == 'Satz von Stokes' or integral_kind == "Stokes' theorem":
+                elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind == "Stokes' theorem":
                         self.show_curl()
-            elif self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() == "Gauss' theorem" :
+            elif self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
                 self.draw_surface_arrows()
             elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
                 self.draw_line_arrows() 
@@ -534,47 +509,14 @@ class App(tk.Frame):
                 self.catch_inRect_vec()
         if self.check_var_partialx.get() == True or self.check_var_partialy == True or self.check_fieldscanner_var.get()==True:
             self.canvas.itemconfig('field_arrow',fill='gray')
-        
-
-
-## -------- Berechnung der Integrale
-    def divergence(self):
-        F_x,F_y = self.F
-        divergence = sy.diff(F_x,self.x)+sy.diff(F_y,self.y)
-        return divergence
-
-    def curl(self):
-        F_x,F_y = self.F
-        curl = sy.diff(F_y,self.x)-sy.diff(F_x,self.y)
-        return curl
-
-    def calc_AreaInt(self):
-        x0,x1,y1,y0 = self.order_Rec_Coords()
-        x0,y0 = self.Transform(x0,y0)
-        x1,y1 = self.Transform(x1,y1)
-        first_Integration = sy.integrate(f'{self.divergence()}',(self.x,x0,x1))
-        Area_Integration = sy.integrate(f'{first_Integration}',(self.y,y0,y1))
-        return Area_Integration
-
-    def calc_LineInt(self):
-        x0,x1,y1,y0 = self.order_Rec_Coords()
-        x0,y0 = self.Transform(x0,y0)
-        x1,y1 = self.Transform(x1,y1)
-        first_Integration = sy.integrate(f'{self.curl()}',(self.x,x0,x1))
-        Area_Integration = sy.integrate(f'{first_Integration}',(self.y,y0,y1))
-        return Area_Integration
-
-
 
 ## -------- Interaktives Rechteck
 
 
     def startRect(self, event):
         state = self.whereClick(event)
-        print(state)
         #Testing if there is already an rectangle
         if self.rectid != None:
-            print(f'In startRec ist die Rectid: {self.rectid} ')          
             if state == 'Inside':
                 self.position_flag='Inside'          # Setzt die Flag zum Auswahl des Rechtecks
                 return
@@ -599,7 +541,6 @@ class App(tk.Frame):
                 self.rect = self.canvas.create_rectangle(self.rectx0, self.recty0, self.rectx0, self.recty0, tags=('rec',), outline='black') #stipple funktioniert auf MacOs nicht :(
                 #Get rectangle"s canvas object ID
                 self.rectid = self.canvas.find_closest(self.rectx0, self.recty0, halo=2)
-                print("Rectangle {0} started at {1} {2} {3} {4} ".format(self.rect, self.rectx0, self.recty0, self.rectx0, self.recty0))
         else:
             self.rectx0 = self.canvas.canvasx(event.x)
             self.recty0 = self.canvas.canvasy(event.y)
@@ -609,7 +550,6 @@ class App(tk.Frame):
             self.rect = self.canvas.create_rectangle(self.rectx0, self.recty0, self.rectx0, self.recty0, tags=('rec',), outline='black') #stipple funktioniert auf MacOs nicht :(
             #Get rectangle"s canvas object ID
             self.rectid = self.canvas.find_closest(self.rectx0, self.recty0, halo=2)
-            print("Rectangle {0} started at {1} {2} {3} {4} ".format(self.rect, self.rectx0, self.recty0, self.rectx0, self.recty0))
 
     def scaleRect(self, event):
         oldrectx0, oldrecty0, oldrectx1, oldrecty1 = self.rectstartCoords
@@ -638,7 +578,7 @@ class App(tk.Frame):
             #Modify rectangle x1, y1 coordinates
             self.canvas.coords(self.rectid, self.rectx0, self.recty0, self.rectx1, self.recty1)
         # Integrale wärend der Laufzeit berechen    
-        if self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() == "Gauss' theorem" :
+        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
             self.draw_surface_arrows()
         elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
             self.draw_line_arrows() 
@@ -650,10 +590,9 @@ class App(tk.Frame):
             #Translate mouse screen x1,y1 coordinates to canvas coordinates
             self.rectx1 = self.canvas.canvasx(event.x)
             self.recty1 = self.canvas.canvasy(event.y)
-            self.rectx0,self.rectx1,self.recty0,self.recty1 = self.order_Rec_Coords()
+            self.rectx0,self.rectx1,self.recty1,self.recty0 = self.order_Rec_Coords()
             #Modify rectangle x1, y1 coordinates (final)
             self.canvas.coords(self.rectid, self.rectx0, self.recty0,self.rectx1, self.recty1)
-            print(f'Rectangle {self.rect} ended at {self.rectx0} {self.recty0} {self.rectx1} {self.recty1}')
             if self.rectx0 == self.rectx1 or self.recty0 == self.recty1:
                 self.deleteRect()
                 
@@ -663,7 +602,7 @@ class App(tk.Frame):
         if self.rectx0 == self.rectx1 or self.recty0 == self.recty1:
             self.deleteRect()            
             return
-        if self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() == "Gauss' theorem" :
+        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
             self.draw_surface_arrows()
         elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
             self.draw_line_arrows() 
@@ -725,57 +664,63 @@ class App(tk.Frame):
             self.draw_vector_components(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y),'fieldscanner_partial_x','fieldscanner_partial_y')
 
     def field_scanner_stoped(self,event):
-        #self.canvas.itemconfig('clickarrow', fill='black')
-        #self.canvas.itemconfig('fieldscanner_partial_x', fill='black')
-        #self.canvas.itemconfig('fieldscanner_partial_y', fill='black')
         self.field_scanner_show_vector(event)
         self.draw_vector_components(self.canvas.canvasx(event.x),self.canvas.canvasx(event.y),'fieldscanner_partial_x','fieldscanner_partial_y')
-
+       
 
     def field_scanner_show_vector(self,event):
         cordx = self.canvas.canvasx(event.x)
         cordy = self.canvas.canvasy(event.y) 
         x,y = self.Transform(cordx,cordy)
-        Fx=self.F[0].evalf(5, subs={self.x: x, self.y:y})*self.scale
-        Fy=self.F[1].evalf(5,subs={self.x: x, self.y:y})*self.scale
+        Fx=self.Field.Fx.evalf(5, subs={self.x: x, self.y:y})*self.scale
+        Fy=self.Field.Fy.evalf(5,subs={self.x: x, self.y:y})*self.scale
         x1=cordx+Fx
         y1=cordy-Fy
-        vec_leng = mt.sqrt((cordx-x1)**2+(cordy-y1)**2)
+        # vec_leng = mt.sqrt((cordx-x1)**2+(cordy-y1)**2)
+        vec_leng = self.Field.length(x,y)*self.scale
         if vec_leng < 4: return
         self.canvas.create_line(cordx, cordy, x1, y1,width=1, arrow=tk.LAST, fill='green', tags=('clickarrow',))
-        if self.integral_kind.get() == 'Satz von Gauss' or self.integral_kind.get() =="Gauss' theorem" :
+        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() =="Gauss' theorem" :
             self.show_divergence(cordx,cordy)
         elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() =="Stokes' theorem":
             self.show_curl(cordx,cordy)
 
 
+
     def show_divergence(self,cordx,cordy):
         x,y = self.Transform(cordx,cordy)
-        Fx=self.F[0].evalf(5, subs={self.x: x, self.y:y})*self.scale
-        Fy=self.F[1].evalf(5,subs={self.x: x, self.y:y})*self.scale
-        sy_divergence=self.divergence()
-        value = sy_divergence.evalf(2, subs={self.x: x, self.y:y})
-        if self.checklanguage == 'DE':
-            self.Divergenz_Output.config(text=f'{value} a.u.')
-        else:
-            self.Divergenz_Output.config(text=f'{value} a.u.')
+        value = self.Field.divergence_at(x,y)
+        try:
+            if self.checklanguage == 'DE':
+                self.Divergenz_Output.config(text=f'{value:.2f} a.u.')
+            else:
+                self.Divergenz_Output.config(text=f'{value:.2f} a.u.')
+        except TypeError:
+            self.Divergenz_Output.config(text=f'{0} a.u.')
+   
 
     def show_curl(self,cordx,cordy):
         x,y = self.Transform(cordx,cordy)
-        sy_curl=self.curl()
-        value = sy_curl.evalf(2, subs={self.x: x, self.y:y})
-        if self.checklanguage == 'DE':
-            self.Divergenz_Output.config(text=f'{value} a.u.')
-        else:
-            self.Divergenz_Output.config(text=f'{value} a.u.')
+        value = self.Field.curl_at(x,y)
+        try:
+            if self.checklanguage == 'DE':
+                self.Divergenz_Output.config(text=f'{value:.2f} a.u.')
+            else:
+                self.Divergenz_Output.config(text=f'{value:.2f} a.u.')
+        except TypeError:
+            self.Divergenz_Output.config(text=f'{0} a.u.')
+        
 
 ## -------- Visualisierung der Integrale 
-
+    
     def draw_surface_arrows(self): #Berechnet und zeichnet das Flächenintegral
 
         self.canvas.delete('rec_arrow')
 
-        self.AreaInt_value = self.calc_AreaInt().evalf(2)
+        x1,x2,y1,y2 = self.order_Rec_Coords()
+        x1,y1 = self.Transform(x1,y1)
+        x2,y2 = self.Transform(x2,y2)
+        self.AreaInt_value = self.Field.flux(x1,x2,y1,y2)
 
         if self.check_var_RectVec.get() == True:
 
@@ -788,21 +733,21 @@ class App(tk.Frame):
                     x1,y1_u = (i,y2) #entlang der oberen Kante des Rechtecks
                     cordx,cordy_d = self.Transform(x1,y1_d)
                     cordx,cordy_u = self.Transform(x1,y1_u)
-                    Fy_d=self.F[1].evalf(0, subs={self.x: cordx, self.y:cordy_d})*self.scale  #stärke der Vektoren an der unteren Kante entlang der Y-Richtung
-                    Fy_u=self.F[1].evalf(0, subs={self.x: cordx, self.y:cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der Y-Richtung
+                    Fy_d=self.Field.Fy.evalf(0, subs={self.x: cordx, self.y:cordy_d})*self.scale  #stärke der Vektoren an der unteren Kante entlang der Y-Richtung
+                    Fy_u=self.Field.Fy.evalf(0, subs={self.x: cordx, self.y:cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der Y-Richtung
                     y2_d=y1_d-Fy_d
                     y2_u=y1_u-Fy_u
                     if Fy_d == Fy_u or self.AreaInt_value == 0:
                         self.equal_flag = True
                     else:
                         self.equal_flag = False
-                    if -Fy_d<0:
+                    if Fy_d<0:
                         self.arrow_rec_create( x1, y1_d, x1, y2_d, c='#2AA138')
-                    elif -Fy_d>0:
+                    elif Fy_d>0:
                         self.arrow_rec_create( x1, y1_d, x1, y2_d, c='#E0260C')
-                    if -Fy_u>0:
+                    if Fy_u>0:
                         self.arrow_rec_create( x1, y1_u, x1, y2_u, c='#2AA138')
-                    elif -Fy_u<0:
+                    elif Fy_u<0:
                         self.arrow_rec_create( x1, y1_u, x1, y2_u, c='#E0260C')
 
 
@@ -814,13 +759,13 @@ class App(tk.Frame):
                 x2=self.rectx1
 
 
-            for i in range(int(y1),int(y2),int(self.max_arrow_size/2)):
+            for i in range(int(y2),int(y1),int(self.max_arrow_size/2)):
                     x1_l,y =(x1,i)  #entlang der linke Kante des Rechtecks
                     x1_r,y = (x2,i) #entlang der rechten Kante des Rechtecks
                     cordx_l,cordy=self.Transform(x1_l,y)
                     cordx_r,cordy=self.Transform(x1_r,y)
-                    Fx_l=self.F[0].evalf(0, subs={self.x: cordx_l, self.y:cordy})*self.scale  #stärke der Vektoren an der linken Kante entlang der X-Richtung
-                    Fx_r=self.F[0].evalf(0, subs={self.x: cordx_r, self.y:cordy})*self.scale #stärke der Vektoren an der rechten Kante entlang der X-Richtung
+                    Fx_l=self.Field.Fx.evalf(0, subs={self.x: cordx_l, self.y:cordy})*self.scale  #stärke der Vektoren an der linken Kante entlang der X-Richtung
+                    Fx_r=self.Field.Fx.evalf(0, subs={self.x: cordx_r, self.y:cordy})*self.scale #stärke der Vektoren an der rechten Kante entlang der X-Richtung
                     x2_l=x1_l+Fx_l
                     x2_r=x1_r+Fx_r
                     if Fx_l == Fx_r or self.AreaInt_value == 0:
@@ -838,29 +783,32 @@ class App(tk.Frame):
 
         
         if self.checklanguage == 'DE':
-            self.Flux_Output.config(text=f'{self.AreaInt_value} a.u.')
+            self.Flux_Output.config(text=f'{self.AreaInt_value:.2f} a.u.')
         else:
-            self.Flux_Output.config(text=f'{self.AreaInt_value} a.u.')
+            self.Flux_Output.config(text=f'{self.AreaInt_value:.2f} a.u.')
 
 
 
     def draw_line_arrows(self):
-
+        green = '#2AA138'
+        red = '#E0260C'
         self.canvas.delete('rec_arrow')
 
-        self.LineInt_value = self.calc_LineInt().evalf(2)
+        x1,x2,y1,y2 = self.order_Rec_Coords()
+        x1,y1 = self.Transform(x1,y1)
+        x2,y2 = self.Transform(x2,y2)
+
+        self.LineInt_value = self.Field.induction(x1,x2,y1,y2)
 
         if self.check_var_RectVec.get() == True:
-
             x1,x2,y1,y2 = self.order_Rec_Coords()
-
-            for i in range(int(x1),int(x2),int(self.max_arrow_size)):
+            for i in range(int(x1),int(x2),int(self.max_arrow_size/2)):
                 x1_d,y_d =(i,y1)  #entlang der unteren Kante des Rechtecks (down)
                 x1_u,y_u = (i,y2) #entlang der oberen Kante des Rechtecks (up)
                 cordx_d,cordy_d=self.Transform(x1_d,y_d)
                 cordx_u,cordy_u=self.Transform(x1_u,y_u)
-                Fx_d=self.F[0].evalf(0, subs={self.x: cordx_d, self.y:-cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
-                Fx_u=self.F[0].evalf(0, subs={self.x: cordx_u, self.y:-cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
+                Fx_d=self.Field.Fx.evalf(0, subs={self.x: cordx_d, self.y:-cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
+                Fx_u=self.Field.Fx.evalf(0, subs={self.x: cordx_u, self.y:-cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
                 x2_d=x1_d+Fx_d
                 x2_u=x1_u+Fx_u
                 if Fx_d == Fx_u or self.LineInt_value == 0:
@@ -868,13 +816,13 @@ class App(tk.Frame):
                 else:
                     self.equal_flag = False
                 if Fx_d<0:
-                    self.arrow_rec_create( x1_d, y_d, x2_d, y_d, c='#2AA138')
+                    self.arrow_rec_create( x1_d, y_d, x2_d, y_d, c=red)
                 elif Fx_d>0:
-                    self.arrow_rec_create( x1_d, y_d, x2_d, y_d, c='#E0260C')
+                    self.arrow_rec_create( x1_d, y_d, x2_d, y_d, c=green)
                 if Fx_u>0:
-                    self.arrow_rec_create( x1_u, y_u, x2_u, y_u, c='#2AA138')
+                    self.arrow_rec_create( x1_u, y_u, x2_u, y_u, c=red)
                 elif Fx_u<0:
-                    self.arrow_rec_create( x1_u, y_u, x2_u, y_u, c='#E0260C')
+                    self.arrow_rec_create( x1_u, y_u, x2_u, y_u, c=green)
 
 
             if self.rectx0>self.rectx1: #Reset der x Werte
@@ -884,34 +832,34 @@ class App(tk.Frame):
                 x1=self.rectx0
                 x2=self.rectx1
 
-            for j in range(int(y1),int(y2),int(self.max_arrow_size)):
+            for j in range(int(y2),int(y1),int(self.max_arrow_size/2)):
                 x_l,y1_l =(x1,j)  #entlang der linke Kante des Rechtecks
                 x_r,y1_r = (x2,j) #entlang der rechten Kante des Rechtecks
                 cordx_l,cordy_l=self.Transform(x_l,y1_l)
                 cordx_r,cordy_r=self.Transform(x_r,y1_r)
-                Fy_l=self.F[1].evalf(0, subs={self.x: cordx_l, self.y:-cordy_l})*self.scale  #stärke der Vektoren an der linken Kante entlang der Y-Richtung
-                Fy_r=self.F[1].evalf(0, subs={self.x: cordx_r, self.y:-cordy_r})*self.scale #stärke der Vektoren an der rechten Kante entlang der Y-Richtung
+                Fy_l=self.Field.Fy.evalf(0, subs={self.x: cordx_l, self.y:-cordy_l})*self.scale  #stärke der Vektoren an der linken Kante entlang der Y-Richtung
+                Fy_r=self.Field.Fy.evalf(0, subs={self.x: cordx_r, self.y:-cordy_r})*self.scale #stärke der Vektoren an der rechten Kante entlang der Y-Richtung
                 y2_l=y1_l-Fy_l
                 y2_r=y1_r-Fy_r
                 if Fy_l == Fy_r or self.LineInt_value == 0:
                     self.equal_flag = True
                 else:
                     self.equal_flag = False
-                if -Fy_l>0:
-                    self.arrow_rec_create( x_l, y1_l, x_l, y2_l, c='#2AA138') #grün
-                elif -Fy_l<0:
-                    self.arrow_rec_create( x_l, y1_l, x_l, y2_l, c='#E0260C') #rot
-                if -Fy_r<0:
-                    self.arrow_rec_create( x_r, y1_r, x_r, y2_r, c='#2AA138')
-                elif -Fy_r>0:
-                    self.arrow_rec_create( x_r, y1_r, x_r, y2_r, c='#E0260C')
+                if Fy_l>0:
+                    self.arrow_rec_create( x_l, y1_l, x_l, y2_l, c=red) #grün
+                elif Fy_l<0:
+                    self.arrow_rec_create( x_l, y1_l, x_l, y2_l, c=green) #rot
+                if Fy_r<0:
+                    self.arrow_rec_create( x_r, y1_r, x_r, y2_r, c=red)
+                elif Fy_r>0:
+                    self.arrow_rec_create( x_r, y1_r, x_r, y2_r, c=green)
 
 
         
         if self.checklanguage == 'DE':
-            self.Flux_Output.config(text=f'{self.LineInt_value} a.u.')
+            self.Flux_Output.config(text=f'{self.LineInt_value:.2f} a.u.')
         else:
-            self.Flux_Output.config(text=f'{self.LineInt_value} a.u.')
+            self.Flux_Output.config(text=f'{self.LineInt_value:.2f} a.u.')
 
 ## --------- Visualisierung der Partiellen Ableitungen
 
@@ -920,7 +868,6 @@ class App(tk.Frame):
         self.canvas.itemconfig('field_arrow', fill='gray')
         if self.check_fieldscanner_var.get() == True:
             vector_list = self.canvas.find_withtag('clickarrow')
-            print('Vectorlist: ',vector_list)
         else:
             vector_list = self.canvas.find_enclosed(self.rectx0+2, self.recty1-2, self.rectx1-2, self.recty0+2)  #in dem rechteck von oben links nach unten rechts
         
@@ -933,8 +880,8 @@ class App(tk.Frame):
 
     def draw_vector_components(self,x0,y0,tagx,tagy):        
             x,y = self.Transform(x0,y0)
-            Fx=self.F[0].evalf(5, subs={self.x: x, self.y:y})*self.scale
-            Fy=self.F[1].evalf(5,subs={self.x: x, self.y:y})*self.scale
+            Fx=self.Field.Fx.evalf(5, subs={self.x: x, self.y:y})*self.scale
+            Fy=self.Field.Fy.evalf(5,subs={self.x: x, self.y:y})*self.scale
             x1=x0+Fx
             y1=y0-Fy
             if self.check_var_partialx.get() == True:
@@ -952,7 +899,7 @@ class App(tk.Frame):
 
     def arrow_rec_create(self,x1,y1,x2,y2, c='black'):
         vec_leng = mt.sqrt((x1-x2)**2+(y1-y2)**2)
-        if vec_leng < 4: return
+        #if vec_leng < 4: return
         if self.equal_flag:
             c= self.reduce_color(c)
         self.canvas.create_line(x1, y1, x2, y2,width=1, arrow=tk.LAST, fill=c, tags=('rec_arrow',))
@@ -964,20 +911,25 @@ class App(tk.Frame):
             c = '#E1A198'
         return c
 
-    def draw_field(self): # Zeichnet alle Vektropfeile
+    def draw_field(self): # Zeichnet alle Vektropfeile pro Quadranten
         for i in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):      #X-Koordinate int(max_arrow_size)
             for j in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):  #Y-Koordinate
                 x1,y1 =self.Transform(i,j)
-                Fx=self.F[0].evalf(5, subs={self.x: x1, self.y:y1})*self.scale
-                Fy=self.F[1].evalf(5,subs={self.x: x1, self.y:y1})*self.scale
+                if x1 in self.Field.singularities()['x'] or y1 in self.Field.singularities()['y']:
+                    continue
+
+                Fx=self.Field.Fx.evalf(5, subs={self.x: x1, self.y:y1})*self.scale
+                Fy=self.Field.Fy.evalf(5,subs={self.x: x1, self.y:y1})*self.scale
                 x2=i+Fx
                 y2=j-Fy
                 self.arrow_create( i, j, x2, y2)
             for k in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):
                 j=self.canvas_size-k
                 x1,y1 =self.Transform(i,j)
-                Fx=self.F[0].evalf(5, subs={self.x: x1, self.y:y1})*self.scale
-                Fy=self.F[1].evalf(5,subs={self.x: x1, self.y:y1})*self.scale
+                if x1 in self.Field.singularities()['x'] or y1 in self.Field.singularities()['y']:
+                    continue
+                Fx=self.Field.Fx.evalf(5, subs={self.x: x1, self.y:y1})*self.scale
+                Fy=self.Field.Fy.evalf(5,subs={self.x: x1, self.y:y1})*self.scale
                 x2=i+Fx
                 y2=j-Fy
                 self.arrow_create( i, j, x2, y2)
@@ -986,16 +938,20 @@ class App(tk.Frame):
             i = self.canvas_size-l
             for j in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):  #Y-Koordinate
                 x1,y1 =self.Transform(i,j)
-                Fx=self.F[0].evalf(5, subs={self.x: x1, self.y:y1})*self.scale
-                Fy=self.F[1].evalf(5,subs={self.x: x1, self.y:y1})*self.scale
+                if x1 in self.Field.singularities()['x'] or y1 in self.Field.singularities()['y']:
+                    continue
+                Fx=self.Field.Fx.evalf(5, subs={self.x: x1, self.y:y1})*self.scale
+                Fy=self.Field.Fy.evalf(5,subs={self.x: x1, self.y:y1})*self.scale
                 x2=i+Fx
                 y2=j-Fy
                 self.arrow_create( i, j, x2, y2)
             for k in range(int(self.canvas_size/2),self.canvas_size+1,int(self.max_arrow_size)):
                 j=self.canvas_size-k
                 x1,y1 =self.Transform(i,j)
-                Fx=self.F[0].evalf(5, subs={self.x: x1, self.y:y1})*self.scale
-                Fy=self.F[1].evalf(5,subs={self.x: x1, self.y:y1})*self.scale
+                if x1 in self.Field.singularities()['x'] or y1 in self.Field.singularities()['y']:
+                    continue
+                Fx=self.Field.Fx.evalf(5, subs={self.x: x1, self.y:y1})*self.scale
+                Fy=self.Field.Fy.evalf(5,subs={self.x: x1, self.y:y1})*self.scale
                 x2=i+Fx
                 y2=j-Fy
                 self.arrow_create( i, j, x2, y2)
@@ -1006,12 +962,41 @@ class App(tk.Frame):
         for i in range(0,self.canvas_size+1,int(self.max_arrow_size)):      #X-Koordinate int(max_arrow_size)
             for j in range(0,self.canvas_size+1,int(self.max_arrow_size)):  #Y-Koordinate
                 x1,y1 = self.Transform(i,j)
-                Fx=self.F[0].evalf(5, subs={self.x: x1, self.y:y1})
-                Fy=self.F[1].evalf(5,subs={self.x: x1, self.y:y1})
-                arrowlength= mt.sqrt((Fx)**2+(Fy)**2)
+                if self.Field.point_in_singularity(int(x1),int(y1)): continue
+                arrowlength = self.Field.length(x1,y1)
                 if arrowlength> max_length:
                     max_length = arrowlength
         return max_length+self.arrow_space
+
+
+## -------- Paddlewheel animation
+
+
+    def field_scanner_wheel(self,x,y):
+        curl = self.Field.curl_at(self.Transform(x,y)[0],self.Transform(x,y)[1])
+        if  curl > 0:
+            f = 'arrow-counterclockwise.png'
+            img = Image.open(f)
+            wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
+            self.animate_list.append(wheel)
+        elif curl < 0:
+            f = 'arrow-clockwise.png'
+            img = Image .open(f)
+            wheel = Paddlewheel(self.canvas,x,y,img,0,curl)
+            self.animate_list.append(wheel)
+        else:
+            f = 'arrow-clockwise.png'
+            img = Image .open(f)
+            wheel = Paddlewheel(self.canvas,x,y,img,0,0)
+            self.animate_list.append(wheel)
+
+    def animate(self):
+        for a in self.animate_list: 
+                a.rotate()
+        self.master.after(12,self.animate)
+
+       
+
 
 ## -------- Hilfsfunktionen
 
@@ -1024,11 +1009,11 @@ class App(tk.Frame):
             x2=self.rectx1
 
         if self.recty0>self.recty1:
-            y1=self.recty1
-            y2=self.recty0
-        else:
             y1=self.recty0
             y2=self.recty1
+        else:
+            y1=self.recty1
+            y2=self.recty0
         return(x1,x2,y1,y2)
 
     def Transform(self,x,y):  #koordinatentransformation für jeweils ein Tupel (x,y)
@@ -1037,10 +1022,6 @@ class App(tk.Frame):
         x = (x-c)/skale_by_vectornumber
         y = (c-y)/skale_by_vectornumber
         return (x,y)
-
-
-
-
 
 
 ## -------------------------------  MAIN  --------------------------------- ##
