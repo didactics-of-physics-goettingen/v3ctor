@@ -483,11 +483,9 @@ class App(tk.Frame):
             
     def B2_pressed(self,event):
         if self.check_fieldscanner_var.get() == True:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-            self.animate_list = []
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
         else:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-            self.animate_list = []
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
             self.field_scanner_stoped(event)
 
 
