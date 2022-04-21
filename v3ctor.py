@@ -299,10 +299,11 @@ class App(tk.Frame):
 
 
     def toggleRectVec(self):
-        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
-            self.draw_surface_arrows()
-        elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
-            self.draw_line_arrows()
+        if self.rectid != 0:
+            if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
+                self.draw_surface_arrows()
+            elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
+                self.draw_line_arrows()
 
 
     def changelanguage(self):
@@ -393,11 +394,17 @@ class App(tk.Frame):
     def switch_paddlewheel(self):
 
         if self.check_paddlewheel_var.get():
+            self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow')
             self.canvas.itemconfig('field_arrow', fill='gray')
             self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
         else:
             self.canvas.itemconfig('field_arrow', fill='black')
+            self.canvas.delete('clickarrow','partial_x_arrow','partial_y_arrow')
             self.animate_list = []
+            self.rectx0 = 0     
+            self.recty0 = 0
+            self.rectx1 = 0
+            self.recty1 = 0
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
@@ -527,15 +534,15 @@ class App(tk.Frame):
         self.scale=self.max_arrow_size/self.max_arrow_length() #Skalierung aller Vektoren festlegen
         self.draw_field()  #Alle Pfeile zeichnen
         self._createCoordinatelines()
-        if self.rectid != None:
+        if self.rectid != 0 and self.rectid != None:
             if self.rectx0 == self.rectx1 and self.recty0 == self.recty1:
                 if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
                         self.show_divergence()
                 elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind == "Stokes' theorem":
                         self.show_curl()
-            elif self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
+            elif (self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem") and self.check_var_RectVec.get() :
                 self.draw_surface_arrows()
-            elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
+            elif (self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem" )and self.check_var_RectVec.get():
                 self.draw_line_arrows() 
 
             if self.check_var_partialx.get() == True or self.check_var_partialy == True:
