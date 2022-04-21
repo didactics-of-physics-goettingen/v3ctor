@@ -520,8 +520,7 @@ class App(tk.Frame):
 
     def new_field(self):
         self.scale = 1
-        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-        self.animate_list = []
+        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
         self.Divergenz_Output.config(text=f'')
         self.Flux_Output.config(text=f'')
         self.arrow_number=self.slider.get() #festlegen der Pfeile pro Reihe
@@ -545,6 +544,12 @@ class App(tk.Frame):
                 self.catch_inRect_vec()
         if self.check_var_partialx.get() == True or self.check_var_partialy == True or self.check_fieldscanner_var.get()==True:
             self.canvas.itemconfig('field_arrow',fill='gray')
+        if not self.animate_list == []:
+            wheel_x = self.animate_list[0].x
+            wheel_y = self.animate_list[0].y
+            self.canvas.delete('curlwheel')
+            self.animate_list = []
+            self.field_scanner_wheel(wheel_x,wheel_y)
 
 ## -------- Interaktives Rechteck
 
