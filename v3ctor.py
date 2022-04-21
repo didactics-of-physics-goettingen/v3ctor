@@ -1056,7 +1056,7 @@ class App(tk.Frame):
 
     def Transform(self,x,y):  #koordinatentransformation für jeweils ein Tupel (x,y)
         c = self.canvas_size/2
-        scale = (self.canvas_size/2)/10
+        scale = (self.canvas_size/2)/5
         x = (x-c)/scale
         y = (c-y)/scale
         return (x,y)
