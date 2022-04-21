@@ -848,8 +848,8 @@ class App(tk.Frame):
                 x1_u,y_u = (i,y2) #entlang der oberen Kante des Rechtecks (up)
                 cordx_d,cordy_d=self.Transform(x1_d,y_d)
                 cordx_u,cordy_u=self.Transform(x1_u,y_u)
-                Fx_d=self.Field.Fx.evalf(0, subs={self.x: cordx_d, self.y:-cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
-                Fx_u=self.Field.Fx.evalf(0, subs={self.x: cordx_u, self.y:-cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
+                Fx_d=self.Field.Fx.evalf(0, subs={self.x: cordx_d, self.y:cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
+                Fx_u=self.Field.Fx.evalf(0, subs={self.x: cordx_u, self.y:cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
                 x2_d=x1_d+Fx_d
                 x2_u=x1_u+Fx_u
                 if Fx_d == Fx_u or self.LineInt_value == 0:
