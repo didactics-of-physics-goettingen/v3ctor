@@ -299,10 +299,11 @@ class App(tk.Frame):
 
 
     def toggleRectVec(self):
-        if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
-            self.draw_surface_arrows()
-        elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
-            self.draw_line_arrows()
+        if self.rectid != 0:
+            if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
+                self.draw_surface_arrows()
+            elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
+                self.draw_line_arrows()
 
 
     def changelanguage(self):
@@ -393,11 +394,17 @@ class App(tk.Frame):
     def switch_paddlewheel(self):
 
         if self.check_paddlewheel_var.get():
+            self.canvas.delete('rec_arrow','rec', 'partial_x_arrow', 'partial_y_arrow')
             self.canvas.itemconfig('field_arrow', fill='gray')
             self.field_scanner_wheel(int(self.canvas_size/2), int(self.canvas_size/2))
         else:
             self.canvas.itemconfig('field_arrow', fill='black')
+            self.canvas.delete('clickarrow','partial_x_arrow','partial_y_arrow')
             self.animate_list = []
+            self.rectx0 = 0     
+            self.recty0 = 0
+            self.rectx1 = 0
+            self.recty1 = 0
 ## -------- Info Buttons
     def Impressum(self):
         if self.checklanguage == 'DE':
@@ -414,12 +421,12 @@ class App(tk.Frame):
             if self.integral_kind.get() == 'Satz von Gauß':
                 messagebox.showinfo('Divergenz von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Dieses kann mit der Maus im Feld bewegt und seine Ränder können beliebig verschoben werden. Der Fluss durch den Rand der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Divergenz an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die Normalen an den Rand der Rechteckfläche wird durch Aktivierung der Box eingeblendet.')
             else:
-                messagebox.showinfo('Roatation von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Durch Aktivierung der Box wird ein Schaufelrad in das Feld eingefügt. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Rechteck und Rad können mit der Maus im Feld bewegt und die Ränder des Rechtecks können beliebig verschoben werden. Der Fluss entlang der Randkurve der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks oder in der Umgebung des Schaufelrads eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt die Rotation (Curl) an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die vektoriellen Wegelemente der Rechteckkurve wird durch Aktivierung der Box eingeblendet.')
+                messagebox.showinfo('Roatation von F','Mit dem Fieldscanner können mit gedrückter Maustaste Vektorpfade unterschiedlicher Schrittlängen nachgezeichnet werden. Ein Klick mit der rechten Maustaste im Feld löscht alle gezeichneten Pfade. Durch Aktivierung der Box wird ein Schaufelrad in das Feld eingefügt. Mit dem Mauszeiger kann ein Rechteck in das Vektorfeld gezogen werden (Fieldscanner muss deaktiviert sein). Rechteck und Rad können mit der Maus im Feld bewegt und die Ränder des Rechtecks können beliebig verschoben werden. Der Fluss entlang der Randkurve der aufgezogenen Rechteckfläche wird angezeigt (Angabe in abitrary units a.u.). Durch Aktivierung der Boxen können die Feldkomponenten (x und y) innerhalb eines Rechtecks oder in der Umgebung des Schaufelrads eingeblendet werden. Ein Klick mit der rechten Maustaste an einen beliebigen Ort im Feld gibt den Betrag der Rotation (Curl) an diesem Ort an (in a.u.). Die Projektion der Feldkomponenten auf die vektoriellen Wegelemente der Rechteckkurve wird durch Aktivierung der Box eingeblendet.')
         else:
             if self.integral_kind.get() == "Gauss' theorem":
                 messagebox.showinfo('Divergence of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow through the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the divergence (in a.u.) at that point. The projection of the field components onto the area’s outer normal vectors is shown by activating the box.")
             else:
-                messagebox.showinfo('Curl of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. By activating the box, a paddlewheel will be displayed. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow along the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the curl (in a.u.) at that point. The projection of the field components onto the vectorial line element is shown by activating the box.")
+                messagebox.showinfo('Curl of F',"With the fieldscanner, vector paths of different step lengths can be traced by holding down the mouse button. A click with the right mouse button in the field deletes all drawn paths. By activating the box, a paddlewheel will be displayed. A rectangle can be drawn into the vector field with the mouse (fieldscanner needs to be deactivated). Using the mouse, a rectangle can be moved and its boundaries can be varied. The flow along the drawn rectangle boundary is displayed (Indication in abitrary units a.u.). By activating the boxes, the field components (x and y) within a rectangle can be displayed. Right-clicking anywhere in the field indicates the curl's absolute value (in a.u.) at that point. The projection of the field components onto the vectorial line element is shown by activating the box.")
     def help_integral(self):
         if self.checklanguage == 'DE':
             if self.integral_kind.get() == 'Satz von Gauß':
@@ -483,11 +490,9 @@ class App(tk.Frame):
             
     def B2_pressed(self,event):
         if self.check_fieldscanner_var.get() == True:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-            self.animate_list = []
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
         else:
-            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-            self.animate_list = []
+            self.canvas.delete('clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
             self.field_scanner_stoped(event)
 
 
@@ -520,8 +525,7 @@ class App(tk.Frame):
 
     def new_field(self):
         self.scale = 1
-        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y','curlwheel')
-        self.animate_list = []
+        self.canvas.delete('rec_arrow','field_arrow', 'partial_x_arrow', 'partial_y_arrow','clickarrow','fieldscanner_partial_x','fieldscanner_partial_y')
         self.Divergenz_Output.config(text=f'')
         self.Flux_Output.config(text=f'')
         self.arrow_number=self.slider.get() #festlegen der Pfeile pro Reihe
@@ -530,21 +534,27 @@ class App(tk.Frame):
         self.scale=self.max_arrow_size/self.max_arrow_length() #Skalierung aller Vektoren festlegen
         self.draw_field()  #Alle Pfeile zeichnen
         self._createCoordinatelines()
-        if self.rectid != None:
+        if self.rectid != 0 and self.rectid != None:
             if self.rectx0 == self.rectx1 and self.recty0 == self.recty1:
                 if self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
                         self.show_divergence()
                 elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind == "Stokes' theorem":
                         self.show_curl()
-            elif self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem" :
+            elif (self.integral_kind.get() == 'Satz von Gauß' or self.integral_kind.get() == "Gauss' theorem") and self.check_var_RectVec.get() :
                 self.draw_surface_arrows()
-            elif self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem":
+            elif (self.integral_kind.get() == 'Satz von Stokes' or self.integral_kind.get() == "Stokes' theorem" )and self.check_var_RectVec.get():
                 self.draw_line_arrows() 
 
             if self.check_var_partialx.get() == True or self.check_var_partialy == True:
                 self.catch_inRect_vec()
         if self.check_var_partialx.get() == True or self.check_var_partialy == True or self.check_fieldscanner_var.get()==True:
             self.canvas.itemconfig('field_arrow',fill='gray')
+        if not self.animate_list == []:
+            wheel_x = self.animate_list[0].x
+            wheel_y = self.animate_list[0].y
+            self.canvas.delete('curlwheel')
+            self.animate_list = []
+            self.field_scanner_wheel(wheel_x,wheel_y)
 
 ## -------- Interaktives Rechteck
 
@@ -843,8 +853,8 @@ class App(tk.Frame):
                 x1_u,y_u = (i,y2) #entlang der oberen Kante des Rechtecks (up)
                 cordx_d,cordy_d=self.Transform(x1_d,y_d)
                 cordx_u,cordy_u=self.Transform(x1_u,y_u)
-                Fx_d=self.Field.Fx.evalf(0, subs={self.x: cordx_d, self.y:-cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
-                Fx_u=self.Field.Fx.evalf(0, subs={self.x: cordx_u, self.y:-cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
+                Fx_d=self.Field.Fx.evalf(0, subs={self.x: cordx_d, self.y:cordy_d})*self.scale #stärke der Vektoren an der unteren Kante entlang der X-Richtung
+                Fx_u=self.Field.Fx.evalf(0, subs={self.x: cordx_u, self.y:cordy_u})*self.scale #stärke der Vektoren an der obern Kante entlang der X-Richtung
                 x2_d=x1_d+Fx_d
                 x2_u=x1_u+Fx_u
                 if Fx_d == Fx_u or self.LineInt_value == 0:
@@ -1051,7 +1061,7 @@ class App(tk.Frame):
 
     def Transform(self,x,y):  #koordinatentransformation für jeweils ein Tupel (x,y)
         c = self.canvas_size/2
-        scale = (self.canvas_size/2)/10
+        scale = (self.canvas_size/2)/5
         x = (x-c)/scale
         y = (c-y)/scale
         return (x,y)
